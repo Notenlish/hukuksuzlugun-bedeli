@@ -3,3 +3,6 @@ uvicorn
 sqlalchemy
 pydantic
 requests
+dotenv
+evds
+psycopg2-binary
