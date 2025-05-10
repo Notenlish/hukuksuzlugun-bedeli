@@ -3,6 +3,7 @@ import os
 
 import dotenv
 import evdsclient
+from evds_series import EVDS_SERIES
 
 dotenv.load_dotenv(".env")
 
@@ -13,9 +14,12 @@ class Fetcher:
         self.evds = evdsclient.evdsAPI(EVDS_API_KEY)
         self.date_imamoglu_arrested = date(2025, 2, 19)  # 19 mart 2025
 
-    def _get_past_data(self,type):
+    def populate_db_with_past_evds_data(self):
         today = date.today()
-        df = self.evds.get_data([""])
+        
+        df = self.evds.get_data()
+        for k, v in EVDS_SERIES.items():
+            df = self.evds.get_data([v["code"]],self.date_imamoglu_arrested,)
 
         if df is None:
             raise Exception("df is none!")

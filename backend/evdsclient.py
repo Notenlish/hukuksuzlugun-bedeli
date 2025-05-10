@@ -128,7 +128,7 @@ class evdsAPI:
 
         return df
 
-    def get_data(self, series, startdate, enddate="", aggregation_types="", formulas="", frequency="", raw=False):
+    def get_data(self, series:list, startdate, enddate="", aggregation_types="", formulas="", frequency="", raw=False):
         """
         The function returns data of the given series data. Series must be typed as list.
         Also, set parameter raw=False to return dictionary format.
