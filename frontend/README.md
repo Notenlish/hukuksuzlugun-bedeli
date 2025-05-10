@@ -20,6 +20,8 @@ For DB related stuff, you can just create a NEON database from vercel and copy p
 also set up `CONTACT_WEBHOOK` for discord webhook.
 Also set up `NEXTAUTH_URL`. 
 
+if prisma says it coudlnt find DATABASE_URL yet youve specified it in .env.local, you need to create .env file and put DATABASE_URL there as well.
+
 
 
 # Commands
