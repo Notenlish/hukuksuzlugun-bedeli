@@ -42,6 +42,13 @@ export default function AllChanges({
           </div>
         );
       })}
+      {/*
+        dolar %10 arttı, 36'dan 38'e vardı
+        Faiz %42.5'den %46'ya çıktı
+        Dış borç 500 milyar tl oldu
+        100 milyar dolar ülkeden çıkış yaptı
+        57 Milyar Dolar döviz rezervi sattık
+      */}
     </div>
   );
 }
