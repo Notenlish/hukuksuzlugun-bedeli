@@ -3,18 +3,18 @@ import { TypographyH1, TypographyP } from "@/components/ui/typography";
 export default function AboutPage() {
   return (
     <div className="p-12">
-      <TypographyH1>About Us</TypographyH1>
-      <TypographyP>
-        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Assumenda sint expedita
-        numquam animi fuga obcaecati omnis provident exercitationem corrupti, eum, enim
-        ipsum dolore labore perferendis autem voluptas voluptate officiis molestiae.
-      </TypographyP>
+      <TypographyH1>Hakkımızda</TypographyH1>
+      <TypographyP>.</TypographyP>
       <br />
-      <TypographyH1>Disclaimer</TypographyH1>
+      <TypographyH1>Yasal Uyarı</TypographyH1>
       <TypographyP>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui dolore odit aut
-        ducimus. Odio iusto fugit in, culpa vel eaque, impedit neque, commodi numquam ab
-        praesentium repellendus obcaecati velit explicabo.
+        Bu sitenin hiçbir siyasi hareket veya parti, grup, örgüt veya dernekle
+        ilişkisi yoktur. Sitede yer alan içerikler sadece kamuoyunu
+        bilgilendirmek amaçlıdır. Bu site 3. parti sağlayıcılardan elde ettiği
+        veriyle bilgi sunmaktadır, yanlış/eksik veri olması durumunda bu site
+        sorumluluk kabul etmez. Bu site hiçbir gruba, kişiye, siyasi partiye,
+        kuruma, kavrama zarar verme amacı gütmez. Bu site, bu site kaynaklı
+        herhangi bir zarardan sorumlu değildir, sorumlu tutulamaz.
       </TypographyP>
     </div>
   );
