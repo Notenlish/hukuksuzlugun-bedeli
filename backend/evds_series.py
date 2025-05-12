@@ -1,13 +1,42 @@
 from typing import TypedDict
 import enum
 
-class Frequency(str, enum.Enum):
-    DAILY = "daily"
-    MONTHLY = "monthly"
 
-class DataType(str, enum.Enum):
+class Aggregation(enum.StrEnum):
+    AVG = "avg"
+    MIN = "min"
+    MAX = "max"
+    FIRST = "first"
+    LAST = "last"
+    SUM = "sum"
+
+
+class Formula(enum.StrEnum):
+    PERCENTAGE_CHANGE = "1"
+    DIFFERENCE = "2"
+    YEARLY_PERCENTAGE_CHANGE = "3"
+    YEARLY_DIFFERENCE = "4"
+    PERCENTAGE_CHANGE_COMPARED_TO_END_OF_PREVIOUS_YEAR = "5"
+    DIFFERENCE_COMPARED_TO_END_OF_PREVIOUS_YEAR = "6"
+    MOVING_AVERAGE = "7"
+    MOVING_TOTAL = "8"
+
+
+class Frequency(enum.StrEnum):
+    DAILY = "1"
+    WORKDAY = "2"
+    WEEKLY = "3"
+    TWICE_A_MONTH = "4"
+    MONTHLY = "5"
+    QUARTERLY = "6"
+    SIX_MONTHS = "7"
+    YEARLY = "8"
+
+
+class DataType(enum.StrEnum):
     NUMERIC = "numeric"
     PERCENT = "percent"
+
 
 class EVDSSeriesMeta(TypedDict):
     name: str
@@ -17,6 +46,7 @@ class EVDSSeriesMeta(TypedDict):
     data_type: DataType
     category: str
     description: str
+
 
 EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
     "DAILY_USD_TRY": {
