@@ -44,6 +44,8 @@ EVDSFrequencyMap = {
     "YEARLY": "8",
 }
 
+# TM çözüm basit alembic kullanıcam, djangodaki makemigrations cart curt'unun benzeri şeyi sqlalchemy için yapıyormuş iyi bari
+
 
 class DataSourceEnum(str, enum.Enum):
     EVDS = "evds"
