@@ -6,6 +6,8 @@ from sqlalchemy import Column, ForeignKey, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.types import Date, Float, Integer, String
+from sqlalchemy.dialects.postgresql import ENUM
+
 
 Base = declarative_base()
 
@@ -20,12 +22,27 @@ class DataTypeEnum(str, enum.Enum):
     percent = "percent"
 
 
-class FrequencyEnum(str, enum.Enum):
-    hourly = "hourly"
-    daily = "daily"
-    monthly = "monthly"
-    realtime = "realtime"
-    ad_hoc = "ad_hoc"
+class FrequencyEnum(enum.StrEnum):
+    DAILY = "daily"
+    WORKDAY = "workday"
+    WEEKLY = "weekly"
+    TWICE_A_MONTH = "twice_a_month"
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    SIX_MONTHS = "six_months"
+    YEARLY = "yearly"
+
+
+EVDSFrequencyMap = {
+    "DAILY": "1",
+    "WORKDAY": "2",
+    "WEEKLY": "3",
+    "TWICE_A_MONTH": "4",
+    "MONTHLY": "5",
+    "QUARTERLY": "6",
+    "SIX_MONTHS": "7",
+    "YEARLY": "8",
+}
 
 
 class DataSourceEnum(str, enum.Enum):
@@ -53,7 +70,7 @@ class TrackedMetric(Base):
     unit = Column(String, nullable=True)
 
     data_type = Column(SqlEnum(DataTypeEnum), default=DataTypeEnum.numeric)
-    frequency = Column(SqlEnum(FrequencyEnum), default=FrequencyEnum.daily)
+    frequency = Column(ENUM(FrequencyEnum, name="frequencyenum"), default=FrequencyEnum.DAILY)
 
     datapoints = relationship("MetricDataPoint", back_populates="metric")
 
