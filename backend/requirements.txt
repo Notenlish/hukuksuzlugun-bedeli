@@ -6,3 +6,5 @@ requests
 dotenv
 evds
 psycopg2-binary
+tortoise-orm[asyncpg]
+aerich
