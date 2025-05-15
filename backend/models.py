@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import date
+
 from tortoise import fields, models
 
 
@@ -27,11 +27,32 @@ class DataSourceEnum(str, Enum):
     SCRAPER = "scraper"
 
 
+class UserPermission(str, Enum):
+    USER = "normal"
+    ADMIN = "admin"
+
+
 class CategoryEnum(str, Enum):
     ECONOMY = "economy"
     CENSHORSHIP = "censorship"
 
 # --- Models --- #
+
+class Account(models.Model):
+    id = fields.IntField(primary_key=True)
+    email = fields.CharField(max_length=255, unique=True)
+    name = fields.CharField(max_length=50)
+    lastname = fields.CharField(max_length=50)
+    password = fields.CharField(max_length=255)
+
+    role = fields.CharEnumField(UserPermission, default=UserPermission.USER)
+
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Account: {self.name} {self.lastname}"
+
 class TrackedMetric(models.Model):
     id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255, unique=True)
