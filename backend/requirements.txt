@@ -1,11 +1,8 @@
-fastapi
+fastapi[standard]
 uvicorn
-sqlalchemy
-pydantic
 requests
 dotenv
 evds
-psycopg2-binary
 tortoise-orm[asyncpg]
 aerich
 passlib

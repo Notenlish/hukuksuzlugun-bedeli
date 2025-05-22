@@ -1,6 +1,6 @@
 from typing import TypedDict
 import enum
-from models import FrequencyEnum, EVDSFrequencyMap
+from models import FrequencyEnum
 
 
 class Aggregation(enum.StrEnum):

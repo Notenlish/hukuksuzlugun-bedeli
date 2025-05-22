@@ -7,9 +7,8 @@ import dotenv
 import evdsclient
 from evds_series import Aggregation
 
-from db import SessionLocal
+from db import Tortoise
 from models import (
-    EVDSFrequencyMap,
     TrackedMetric,
     MetricDataPoint,
     DataTypeEnum,
@@ -59,55 +58,47 @@ class Fetcher:
 
     def populate_db_with_past_evds_data(self):
         today = date.today()
-        session = SessionLocal()
         print("created session")
+        
+        for key, meta in EVDS_SERIES.items():
+            df = self.evds.get_data(
+                series=[meta["code"]],
+                startdate=self.date_imamoglu_arrested,
+                enddate=today,
+                aggregation_types=Aggregation.AVG,
+                formulas="",
+                frequency=meta["frequency"],
+            )
+            if df is None or df.empty:
+                print(f"No data for {key}!")
+                continue
 
-        try:
-            for key, meta in EVDS_SERIES.items():
-                df = self.evds.get_data(
-                    series=[meta["code"]],
-                    startdate=self.date_imamoglu_arrested,
-                    enddate=today,
-                    aggregation_types=Aggregation.AVG,
-                    formulas="",
-                    frequency=meta["frequency"],
+            # TP.DK.USD.A -> DP_DK_USD_A
+            column_name = meta["code"].replace(".", "_")
+
+            df[column_name] = df[
+                column_name
+            ].ffill()  # get rid of NaN for holidays, replace with the last available value
+
+            ###
+
+            metric = TrackedMetric.filter(evds_code=meta["code"]).first
+            
+            """if not metric:
+                metric = TrackedMetric(
+                    name=meta["name"],
+                    description=meta["description"],
+                    source="evds",
+                    evds_code=meta["code"],
+                    url=None,
+                    unit=meta["unit"],
+                    category=meta["category"],
+                    data_type=DataTypeEnum(meta["data_type"]),
+                    frequency=FrequencyEnum(meta["frequency"])
                 )
-                if df is None or df.empty:
-                    print(f"No data for {key}!")
-                    continue
-
-                # TP.DK.USD.A -> DP_DK_USD_A
-                column_name = meta["code"].replace(".", "_")
-
-                df[column_name] = df[
-                    column_name
-                ].ffill()  # get rid of NaN for holidays, replace with the last available value
-
-                ###
-
-                metric = (
-                    session.query(TrackedMetric)
-                    .filter_by(evds_code=meta["code"])
-                    .first()
-                )
-                
-                """if not metric:
-                    metric = TrackedMetric(
-                        name=meta["name"],
-                        description=meta["description"],
-                        source="evds",
-                        evds_code=meta["code"],
-                        url=None,
-                        unit=meta["unit"],
-                        category=meta["category"],
-                        data_type=DataTypeEnum(meta["data_type"]),
-                        frequency=FrequencyEnum(meta["frequency"])
-                    )
-                    session.add(metric)
-                    session.commit()
-                    session.refresh(metric)"""
-        finally:
-            session.close()
+                session.add(metric)
+                session.commit()
+                session.refresh(metric)"""
 
 
 def start_scheduler(): ...

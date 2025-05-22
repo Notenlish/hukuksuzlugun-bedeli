@@ -32,11 +32,13 @@ class UserPermission(str, Enum):
     ADMIN = "admin"
 
 
-class CategoryEnum(str, Enum):
+class CategoryEnum(str, Enum):  # why is this not used anywhere?
     ECONOMY = "economy"
     CENSHORSHIP = "censorship"
 
+
 # --- Models --- #
+
 
 class Account(models.Model):
     id = fields.IntField(primary_key=True)
@@ -52,6 +54,7 @@ class Account(models.Model):
 
     def __str__(self):
         return f"Account: {self.name} {self.lastname}"
+
 
 class TrackedMetric(models.Model):
     id = fields.IntField(pk=True)
@@ -72,11 +75,13 @@ class TrackedMetric(models.Model):
 
 class MetricDataPoint(models.Model):
     id = fields.IntField(pk=True)
-    metric = fields.ForeignKeyField("models.TrackedMetric", related_name="datapoints")
+    metric = fields.ForeignKeyField(
+        "models.TrackedMetric", related_name="datapoints"
+    )
     date = fields.DateField()
 
-    value = fields.FloatField(null=True)
-    value_text = fields.TextField(null=True)
+    value = fields.FloatField(null=True)  # if value
+    value_text = fields.TextField(null=True)  # if text
 
-    class Meta: # pyright: ignore
+    class Meta:  # pyright: ignore
         unique_together = ("metric", "date")

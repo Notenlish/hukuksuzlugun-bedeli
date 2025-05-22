@@ -27,3 +27,7 @@ TCMB_EVDS2_API_KEY = [api_key_here]
 ENV = "DEV" or "PROD"
 
 db is sqlite3 now, I changed it. Its not postgre anymore
+
+## Statistics bla bla bla
+use `prometheus`, with `prometheus-fastapi-instrumentator` or `statsd-exporter`
+use `easyscheduler` for scheduled statistics collection
