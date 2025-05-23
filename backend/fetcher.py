@@ -1,19 +1,14 @@
-from typing import TypedDict
-from datetime import date
-import os
 import enum
+import os
+from datetime import date
+from typing import TypedDict
 
 import dotenv
 import evdsclient
 from evds_series import Aggregation
-
-from db import Tortoise
 from models import (
-    TrackedMetric,
-    MetricDataPoint,
-    DataTypeEnum,
     FrequencyEnum,
-    DataSourceEnum,
+    TrackedMetric,
 )
 
 dotenv.load_dotenv(".env")
@@ -59,7 +54,7 @@ class Fetcher:
     def populate_db_with_past_evds_data(self):
         today = date.today()
         print("created session")
-        
+
         for key, meta in EVDS_SERIES.items():
             df = self.evds.get_data(
                 series=[meta["code"]],
@@ -83,7 +78,7 @@ class Fetcher:
             ###
 
             metric = TrackedMetric.filter(evds_code=meta["code"]).first
-            
+
             """if not metric:
                 metric = TrackedMetric(
                     name=meta["name"],
