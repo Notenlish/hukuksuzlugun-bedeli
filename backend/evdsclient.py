@@ -1,8 +1,9 @@
-from datetime import date
-import pandas as pd
-import requests
 import json
 import ssl
+from datetime import date
+
+import pandas as pd
+import requests
 import urllib3
 
 
@@ -263,6 +264,7 @@ class evdsAPI:
         return df
 
     def __make_request(self, url, params={}):
+        params["key"] = self.key
         params = self.__param_generator(params)
         request = self.session.get(url + params, headers={"key": self.key})
         self.session.close()
@@ -271,8 +273,8 @@ class evdsAPI:
             return request.content
         else:
             raise EVDSConnectionError(
-                "Connection error, please check your API Key or request. Url:{}".format(
-                    request.url
+                "Connection error, please check your API Key or request. Status Code: {} Url:{}".format(
+                    request.status_code, request.url
                 )
             )
 

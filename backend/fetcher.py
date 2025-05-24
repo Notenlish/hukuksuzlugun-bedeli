@@ -1,12 +1,19 @@
 import enum
 import os
-from datetime import date, datetime,timedelta
+import time
+from datetime import date, datetime, timedelta
 from typing import TypedDict
 
 import dotenv
 import evdsclient
-from evds_series import Aggregation, FrequencyEVDS
-from models import DataTypeEnum, FrequencyEnum, MetricDataPoint, TrackedMetric
+from evds_series import FrequencyEVDS
+from models import (
+    CategoryEnum,
+    DataTypeEnum,
+    FrequencyEnum,
+    MetricDataPoint,
+    TrackedMetric,
+)
 from pandas import DataFrame
 
 dotenv.load_dotenv(".env")
@@ -25,7 +32,7 @@ class EVDSSeriesMeta(TypedDict):
     unit: str
     frequency: FrequencyEnum
     data_type: DataType
-    category: str
+    category: CategoryEnum
     description: str
 
 
@@ -36,9 +43,28 @@ EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
         "unit": "TRY",
         "frequency": FrequencyEnum.DAILY,
         "data_type": DataType.NUMERIC,
-        "category": "economy",
+        "category": CategoryEnum.ECONOMY,
         "description": "Daily exchange rate of USD to TRY",
     },
+    "DAILY_EUR_TRY": {
+        "name": "EUR/TRY Exchange Rate",
+        "code": "TP.DK.EUR.A",
+        "unit": "TRY",
+        "frequency": FrequencyEnum.DAILY,
+        "data_type": DataType.NUMERIC,
+        "category": CategoryEnum.ECONOMY,
+        "description": "Daily exchange rate of EUR to TRY",
+    },
+    "MONTHLY_CPI": {
+        "name": "Consumer Price Index (CPI)",
+        "code": "TP.FG.J0",
+        "unit": "index",
+        "frequency": FrequencyEnum.MONTHLY,
+        "data_type": DataType.NUMERIC,
+        "category": CategoryEnum.ECONOMY,
+        "description": "Monthly inflation rate (CPI)",
+    },
+    # I got rid of the 10 year bond yield because EVDS doesnt give that data to me.
 }
 
 
@@ -53,20 +79,22 @@ class Fetcher:
         today = date.today()
         start = today - timedelta(days=2)
         end = today
-        
+
         await self.do_evds_stuff(EVDS_SERIES, start, end)
 
-    async def do_evds_stuff(self, evds_series_data:dict[str, EVDSSeriesMeta], start:date, end:date):
+    async def do_evds_stuff(
+        self, evds_series_data: dict[str, EVDSSeriesMeta], start: date, end: date
+    ):
         for key, meta in evds_series_data.items():
             # df yi niye kullanıyorum ki bozuk zaten
-            #df = self.evds.get_data(
+            # df = self.evds.get_data(
             #    series=[meta["code"]],
             #    startdate=self.date_imamoglu_arrested,
             #    enddate=today,
             #    aggregation_types=Aggregation.AVG,
             #    formulas="",
             #    frequency=meta["frequency"],
-            #)
+            # )
 
             # TP.DK.USD.A -> DP_DK_USD_A
             column_name = meta["code"].replace(".", "_")
@@ -103,7 +131,11 @@ class Fetcher:
             # print(result)
             for index, series_data in result[1:].iterrows():
                 # print(series_data)
-                
+
+                strp_format = "%d-%m-%Y"
+                if metric.frequency == FrequencyEnum.MONTHLY:
+                    strp_format = "%Y-%m"  # yyyy-m (month isnt zero padded)
+
                 date_str = series_data["Tarih"]  # dd-mm-yyyy
                 if not isinstance(date_str, str):
                     raise TypeError("date_str is not string")
@@ -112,8 +144,10 @@ class Fetcher:
 
                 # print("datestr", date_str, "value", value)
 
-                old_datapoint = MetricDataPoint.filter(metric=metric, date=datetime.strptime(date_str, "%d-%m-%Y").date()).first()
-                if old_datapoint is None: # doesnt exist yet
+                old_datapoint = MetricDataPoint.filter(
+                    metric=metric, date=datetime.strptime(date_str, strp_format).date()
+                ).first()
+                if old_datapoint is None:  # doesnt exist yet
                     datapoint = MetricDataPoint(
                         metric=metric,
                         date=datetime.strptime(date_str, "%d-%m-%Y").date(),
@@ -121,7 +155,9 @@ class Fetcher:
                     )
                     await datapoint.save()
                 else:
-                    pass  # no need to create another one or update. 
+                    pass  # no need to create another one or update.
+
+            time.sleep(1)
 
     async def populate_db_with_past_evds_data(self):
         print("created session")
