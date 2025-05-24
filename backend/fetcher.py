@@ -127,7 +127,7 @@ class Fetcher:
         
         today = date.today()
         cur_month_date = date(year=today.year, month=today.month, day=1)  # always take the first day
-        MetricDataPoint.filter(metric=metric, cur_month_date)  
+        MetricDataPoint.filter(metric=metric, date=cur_month_date)  
         
         # I just realized the enag website gives the inflation data for february. It's may. Fuck.
         # Great I just spent god knows how long working on this just for it to be useless.
