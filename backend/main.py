@@ -93,6 +93,10 @@ async def public_endpoint():
     return JSONResponse(content={"message": "Pong!"})
 
 
+@app.post("/get-change")
+async def get_change_endpoint(api_key:str=Depends(api_key_required)):
+    return JSONResponse(content={"dollarChange":{"old":36,"new":38}})
+
 @app.post("/viewdb")
 async def viewdb_endpoint(
     api_key: str = Depends(api_key_required),

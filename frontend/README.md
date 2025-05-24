@@ -22,7 +22,7 @@ Also set up `NEXTAUTH_URL`.
 
 if prisma says it coudlnt find DATABASE_URL yet youve specified it in .env.local, you need to create .env file and put DATABASE_URL there as well.
 
-
+`API_URL`
 
 # Commands
 
