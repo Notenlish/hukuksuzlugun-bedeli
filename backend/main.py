@@ -8,7 +8,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from settings import TORTOISE_ORM
-from tortoise import Tortoise
+from tortoise import Tortoise, fields
 from tortoise.contrib.fastapi import register_tortoise
 
 
@@ -46,7 +46,7 @@ register_tortoise(
 
 
 @app.get("/viewdb")
-async def viewdb(
+async def viewdb_endpoint(
     include_data: bool = Query(
         False, description="Set to true to include data from tables"
     ),
@@ -65,13 +65,13 @@ async def viewdb(
 
     try:
         # Get the default connection
-        conn = Tortoise.get_connection("default")
+        conn = Tortoise.get_connection("default")  # noqa: F841
 
         models_app = Tortoise.apps.get("models")
         if not models_app:
             return {"error": "Models app not found or not initialized."}
-        table_names_and_data = {}
-        only_table_names = []
+        table_info_dict = {}
+        table_names_list = []
 
         for model_name, model_class in models_app.items():
             if not hasattr(model_class, "_meta") or not hasattr(
@@ -81,7 +81,7 @@ async def viewdb(
                 continue
 
             table_name = model_class._meta.db_table
-            only_table_names.append(table_name)
+            table_names_list.append(table_name)
 
             column_names = [
                 d["db_column"] for d in model_class.describe()["data_fields"]
@@ -93,32 +93,44 @@ async def viewdb(
                     records = await model_class.all()
                     serialized = []
                     for record in records:
+                        # print("!!!!!! will be alsdasdlasn records")
                         record_data = {}
                         # Iterate over the model's fields to build a dictionary
                         for field_name in record._meta.fields_map.keys():
+                            print("!!! getting field names", field_name)
                             value = getattr(record, field_name)
+                            print("!----! field value:", value)
+
                             # Basic serialization for common types
                             if isinstance(value, (datetime, date)):
                                 record_data[field_name] = value.isoformat()
                             elif isinstance(value, Enum):
-                                record_data[field_name] = value.value
-                                # get the primitive value of the enum.
+                                record_data[field_name] = value.value  # get the primitive value of the enum.
+                            elif isinstance(value, fields.ReverseRelation):
+                                # serialize as a list of ID's
+                                related_ids = []
+                                async for related_obj in value: # ReverseRelation is an awaitable queryset
+                                    related_ids.append(related_obj.pk) # Assuming 'pk' is the primary key
+                                record_data[field_name] = related_ids
                                 # I might need to update this to handle more complex types
                             else:
                                 record_data[field_name] = value
+                        print("!!!!! Adding to serialized", record_data)
                         serialized.append(record_data)
-                    table_names_and_data[table_name] = {
+                    table_info_dict[table_name] = {
                         "records": serialized,
                         "columns": column_names,
                     }
                 except Exception as e:
-                    table_names_and_data[table_name] = {
+                    table_info_dict[table_name] = {
                         "error": f"Could not fetch data for {table_name}: {str(e)}"
                     }
         if include_data:
-            return table_names_and_data
+            print("returning table names and data")
+            print(table_info_dict)
+            return table_info_dict
         else:
-            return {"tables": only_table_names}
+            return {"tables": table_names_list}
     except Exception as e:
         return JSONResponse(
             status_code=500,

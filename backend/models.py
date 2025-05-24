@@ -34,7 +34,7 @@ class UserPermission(str, Enum):
 
 class CategoryEnum(str, Enum):  # why is this not used anywhere?
     ECONOMY = "economy"
-    CENSHORSHIP = "censorship"
+    CENSORSHIP = "censorship"
 
 
 # --- Models --- #
@@ -61,7 +61,7 @@ class TrackedMetric(models.Model):
     name = fields.CharField(max_length=255, unique=True)
     description = fields.TextField(null=True)
 
-    category = fields.CharField(max_length=255, null=True)
+    category = fields.CharField(max_length=255, null=True)  # TODO: change this to CategoryEnum
     source = fields.CharField(max_length=255, null=True)
     evds_code = fields.CharField(max_length=255, null=True)
     url = fields.CharField(max_length=255, null=True)
