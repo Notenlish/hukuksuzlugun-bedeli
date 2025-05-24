@@ -25,6 +25,7 @@ class FrequencyEnum(str, Enum):
 class DataSourceEnum(str, Enum):
     EVDS = "evds"
     SCRAPER = "scraper"
+    ENAG = "enag"
 
 
 #class UserPermission(str, Enum):

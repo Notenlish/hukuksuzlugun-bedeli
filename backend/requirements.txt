@@ -8,3 +8,5 @@ aerich
 passlib[bcrypt]
 fastapi-admin
 apscheduler
+beautifulsoup4
+aiohttp

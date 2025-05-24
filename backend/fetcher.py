@@ -2,13 +2,16 @@ import enum
 import os
 import time
 from datetime import date, datetime, timedelta
-from typing import TypedDict
+from typing import Any, TypedDict
 
+import aiohttp
 import dotenv
 import evdsclient
+from bs4 import BeautifulSoup
 from evds_series import FrequencyEVDS
 from models import (
     CategoryEnum,
+    DataSourceEnum,
     DataTypeEnum,
     FrequencyEnum,
     MetricDataPoint,
@@ -67,6 +70,18 @@ EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
     # I got rid of the 10 year bond yield because EVDS doesnt give that data to me.
 }
 
+ENAG_DATA: dict[str, EVDSSeriesMeta] = {
+    "INFLATION": {
+        "name": "Monthly Inflation (ENAG)",
+        "code": "",
+        "unit": "%",
+        "frequency": FrequencyEnum.MONTHLY,
+        "data_type": DataType.PERCENT,
+        "category": CategoryEnum.ECONOMY,
+        "description": "Monthly inflation rate, calculated by ENAG.",
+    }
+}
+
 
 class Fetcher:
     def __init__(self) -> None:
@@ -74,6 +89,50 @@ class Fetcher:
         self.evds = evdsclient.evdsAPI(EVDS_API_KEY)
         print("created evds client")
         self.date_imamoglu_arrested = date(2025, 2, 19)  # 19 mart 2025
+
+    async def fetch_inflation(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://enagrup.org/?hl=en") as response:
+                # im giving up on making this readable, if it works it works.
+                html = await response.text()
+                soup = BeautifulSoup(html, features="html.parser")
+                soup_text: str = soup.text
+                _ = "The last 12 months increase rate in ENAGrup Consumer Price Index (E-CPI) is %"
+                start = soup_text.find(_) + len(_)
+
+                _ = "."
+                end = start + soup_text[start:].find(_) + len(_)
+
+                whole_part = soup_text[start:end].replace(".", "")
+
+                l = end + soup_text[end:].find(_) + len(_)
+                decimal_part = soup_text[end:l].replace(".", "")
+
+                perc_inflation = float(f"{whole_part}.{decimal_part}")
+        enag_inflation = ENAG_DATA["INFLATION"]
+        metric = TrackedMetric.filter(source=DataSourceEnum.ENAG, name=enag_inflation).first()
+        if not metric:
+            metric = TrackedMetric(
+                name=enag_inflation["name"],
+                description=enag_inflation["description"],
+                source=DataSourceEnum.ENAG,
+                evds_code=enag_inflation["code"],
+                url=None,
+                unit=enag_inflation["unit"],
+                category=enag_inflation["category"],
+                data_type=DataTypeEnum(enag_inflation["data_type"]),
+                frequency=FrequencyEnum(enag_inflation["frequency"]),
+            )
+            await metric.save()
+        
+        today = date.today()
+        cur_month_date = date(year=today.year, month=today.month, day=1)  # always take the first day
+        MetricDataPoint.filter(metric=metric, cur_month_date)  
+        
+        # I just realized the enag website gives the inflation data for february. It's may. Fuck.
+        # Great I just spent god knows how long working on this just for it to be useless.
+        # Why can't enag just provide an api
+        # how hard could that be??
 
     async def do_scheduled_task(self):
         today = date.today()
