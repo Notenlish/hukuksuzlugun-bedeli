@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 from datetime import date, datetime
 from enum import Enum
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.asyncio import AsyncIOScheduler 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from db import close_db, init_db
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Security, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from fetcher import Fetcher
 from settings import TORTOISE_ORM
 from tortoise import Tortoise, fields, queryset
@@ -18,7 +18,7 @@ from tortoise.contrib.fastapi import register_tortoise
 fetcher = Fetcher()
 
 # Create a scheduler instance
-#scheduler = BackgroundScheduler()  # for normal functions
+# scheduler = BackgroundScheduler()  # for normal functions
 scheduler = AsyncIOScheduler()
 
 
@@ -67,9 +67,35 @@ register_tortoise(
     add_exception_handlers=True,
 )
 
+API_ACCESS_KEY = os.environ.get("API_ACCESS_KEY")
 
-@app.get("/viewdb")
+if not API_ACCESS_KEY:
+    raise RuntimeError("API_ACCESS_KEY environment variable not set.")
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+
+
+async def api_key_required(header_key: str = Security(api_key_header)):
+    """For validating if the API key was provided in the header."""
+    if header_key == API_ACCESS_KEY:
+        return header_key
+
+    # Key invalid
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid API Key",
+        headers={"X-API-Key": "Bearer"},
+    )
+
+
+@app.get("/ping")
+async def public_endpoint():
+    return JSONResponse(content={"message": "Pong!"})
+
+
+@app.post("/viewdb")
 async def viewdb_endpoint(
+    api_key: str = Depends(api_key_required),
     include_data: bool = Query(
         False, description="Set to true to include data from tables"
     ),
@@ -78,6 +104,7 @@ async def viewdb_endpoint(
     Development endpoint to view database tables and optionally their data.
     WARNING: DO NOT USE IN PRODUCTION.
     """
+
     if os.getenv("ENV") == "production":
         return JSONResponse(
             status_code=403,
