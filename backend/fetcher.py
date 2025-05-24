@@ -1,11 +1,12 @@
 import enum
 import os
-from datetime import date
+from datetime import date, datetime
 from typing import TypedDict
 
 import dotenv
+from utils import calculate_dates_to_check
 import evdsclient
-from evds_series import Aggregation
+from evds_series import Aggregation, FrequencyEVDS
 from models import (
     FrequencyEnum,
     TrackedMetric,
@@ -57,7 +58,6 @@ class Fetcher:
         print("created session")
 
         for key, meta in EVDS_SERIES.items():
-            print("AAA KEY ",key)
             df = self.evds.get_data(
                 series=[meta["code"]],
                 startdate=self.date_imamoglu_arrested,
@@ -94,7 +94,10 @@ class Fetcher:
                     frequency=FrequencyEnum(meta["frequency"])
                 )
                 await metric.save()
-            print("METRIC BU ",metric.description)
+            print("METRIC BU ",metric)
+            
+            result = self.evds.get_data([metric.evds_code],self.date_imamoglu_arrested,datetime.today().date(),aggregation_types="avg",frequency=FrequencyEVDS[metric.frequency].value)
+            print("ASDHJSAHDIHASIDHASIHDASHD!!!!!!!!!!!!!!!",result)
 
 
 def start_scheduler(): ...

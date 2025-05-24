@@ -97,9 +97,9 @@ async def viewdb_endpoint(
                         record_data = {}
                         # Iterate over the model's fields to build a dictionary
                         for field_name in record._meta.fields_map.keys():
-                            print("!!! getting field names", field_name)
+                            # print("!!! getting field names", field_name)
                             value = getattr(record, field_name)
-                            print("!----! field value:", value)
+                            # print("!----! field value:", value)
 
                             # Basic serialization for common types
                             if isinstance(value, (datetime, date)):
@@ -107,15 +107,13 @@ async def viewdb_endpoint(
                             elif isinstance(value, Enum):
                                 record_data[field_name] = value.value  # get the primitive value of the enum.
                             elif isinstance(value, fields.ReverseRelation):
-                                # serialize as a list of ID's
-                                related_ids = []
+                                related_ids = []  # serialize as a list of ID's
                                 async for related_obj in value: # ReverseRelation is an awaitable queryset
                                     related_ids.append(related_obj.pk) # Assuming 'pk' is the primary key
                                 record_data[field_name] = related_ids
-                                # I might need to update this to handle more complex types
                             else:
                                 record_data[field_name] = value
-                        print("!!!!! Adding to serialized", record_data)
+                        # print("!!!!! Adding to serialized", record_data)
                         serialized.append(record_data)
                     table_info_dict[table_name] = {
                         "records": serialized,

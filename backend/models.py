@@ -71,6 +71,9 @@ class TrackedMetric(models.Model):
     frequency = fields.CharEnumField(FrequencyEnum, default=FrequencyEnum.DAILY)
 
     datapoints: fields.ReverseRelation["MetricDataPoint"]
+    
+    def __str__(self) -> str:
+        return f"<TrackedMetric name:{self.name} category:{self.category} source:{self.source} evds_code:{self.evds_code} >"
 
 
 class MetricDataPoint(models.Model):

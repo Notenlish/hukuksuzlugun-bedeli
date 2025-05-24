@@ -23,6 +23,17 @@ class Formula(enum.StrEnum):
     MOVING_TOTAL = "8"
 
 
+class FrequencyEVDS(enum.StrEnum):
+    daily="1"
+    workday="2"
+    weekly="3"
+    twice_a_month="4"
+    monthly="5"
+    quarterly="6"
+    six_months="7"
+    yearly="8"
+
+
 class DataType(enum.StrEnum):
     NUMERIC = "numeric"
     PERCENT = "percent"
