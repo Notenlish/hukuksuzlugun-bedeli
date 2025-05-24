@@ -8,7 +8,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from settings import TORTOISE_ORM
-from tortoise import Tortoise, fields
+from tortoise import Tortoise, fields, queryset
 from tortoise.contrib.fastapi import register_tortoise
 
 
@@ -97,11 +97,9 @@ async def viewdb_endpoint(
                         record_data = {}
                         # Iterate over the model's fields to build a dictionary
                         for field_name in record._meta.fields_map.keys():
-                            # print("!!! getting field names", field_name)
                             value = getattr(record, field_name)
-                            # print("!----! field value:", value)
-
-                            # Basic serialization for common types
+                            
+                            # Basic serialization
                             if isinstance(value, (datetime, date)):
                                 record_data[field_name] = value.isoformat()
                             elif isinstance(value, Enum):
@@ -111,6 +109,9 @@ async def viewdb_endpoint(
                                 async for related_obj in value: # ReverseRelation is an awaitable queryset
                                     related_ids.append(related_obj.pk) # Assuming 'pk' is the primary key
                                 record_data[field_name] = related_ids
+                            elif isinstance(value, queryset.QuerySet):
+                                model = await value.all()
+                                record_data[field_name] = model.pk
                             else:
                                 record_data[field_name] = value
                         # print("!!!!! Adding to serialized", record_data)

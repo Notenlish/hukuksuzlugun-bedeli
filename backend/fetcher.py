@@ -4,14 +4,10 @@ from datetime import date, datetime
 from typing import TypedDict
 
 import dotenv
-from utils import calculate_dates_to_check
 import evdsclient
 from evds_series import Aggregation, FrequencyEVDS
-from models import (
-    FrequencyEnum,
-    TrackedMetric,
-    DataTypeEnum
-)
+from models import DataTypeEnum, FrequencyEnum, MetricDataPoint, TrackedMetric
+from pandas import DataFrame
 
 dotenv.load_dotenv(".env")
 
@@ -54,10 +50,11 @@ class Fetcher:
         self.date_imamoglu_arrested = date(2025, 2, 19)  # 19 mart 2025
 
     async def populate_db_with_past_evds_data(self):
-        today = date.today()
         print("created session")
+        today = date.today()
 
         for key, meta in EVDS_SERIES.items():
+            # df yi niye kullanıyorum ki bozuk zaten
             df = self.evds.get_data(
                 series=[meta["code"]],
                 startdate=self.date_imamoglu_arrested,
@@ -66,6 +63,7 @@ class Fetcher:
                 formulas="",
                 frequency=meta["frequency"],
             )
+            print("Bu niye çalışıyor!?!?\n", df)
             if df is None or df.empty:
                 print(f"No data for {key}!")
                 continue
@@ -76,8 +74,6 @@ class Fetcher:
             df[column_name] = df[
                 column_name
             ].ffill()  # get rid of NaN for holidays, replace with the last available value
-
-            ###
 
             metric = await TrackedMetric.filter(evds_code=meta["code"]).first()
 
@@ -91,13 +87,44 @@ class Fetcher:
                     unit=meta["unit"],
                     category=meta["category"],
                     data_type=DataTypeEnum(meta["data_type"]),
-                    frequency=FrequencyEnum(meta["frequency"])
+                    frequency=FrequencyEnum(meta["frequency"]),
                 )
                 await metric.save()
-            print("METRIC BU ",metric)
-            
-            result = self.evds.get_data([metric.evds_code],self.date_imamoglu_arrested,datetime.today().date(),aggregation_types="avg",frequency=FrequencyEVDS[metric.frequency].value)
-            print("ASDHJSAHDIHASIDHASIHDASHD!!!!!!!!!!!!!!!",result)
+            print("METRIC BU ", metric)
+
+            result: DataFrame | None = self.evds.get_data(
+                [metric.evds_code],
+                self.date_imamoglu_arrested,
+                datetime.today().date(),
+                aggregation_types="avg",
+                frequency=FrequencyEVDS[metric.frequency].value,
+            )
+            if result is None:
+                raise Exception("Couldn't fetch data.")
+
+            result.ffill(inplace=True)
+
+            print(result)
+            for index, series_data in result[1:].iterrows():
+                print(series_data)
+                date_str = series_data["Tarih"]  # dd-mm-yyyy
+                if not isinstance(date_str, str):
+                    raise TypeError("date_str is not string")
+
+                value = series_data[column_name]
+
+                print("datestr", date_str, "value", value)
+
+                old_datapoint = MetricDataPoint.filter(metric=metric, date=datetime.strptime(date_str, "%d-%m-%Y").date()).first()
+                if old_datapoint is None: # doesnt exist yet
+                    datapoint = MetricDataPoint(
+                        metric=metric,
+                        date=datetime.strptime(date_str, "%d-%m-%Y").date(),
+                        value=value,
+                    )
+                    await datapoint.save()
+                else:
+                    pass  # no need to create another one or update. 
 
 
 def start_scheduler(): ...
@@ -105,5 +132,8 @@ def start_scheduler(): ...
 
 if __name__ == "__main__":
     f = Fetcher()
-    async def _(): await f.populate_db_with_past_evds_data()
+
+    async def _():
+        await f.populate_db_with_past_evds_data()
+
     k = _()
