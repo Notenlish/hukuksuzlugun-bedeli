@@ -17,7 +17,7 @@ from models import (
     MetricDataPoint,
     TrackedMetric,
 )
-from pandas import DataFrame
+from pandas import DataFrame, isna
 
 dotenv.load_dotenv(".env")
 
@@ -145,34 +145,33 @@ class Fetcher:
         self, evds_series_data: dict[str, EVDSSeriesMeta], start: date, end: date
     ):
         for key, meta in evds_series_data.items():
-            # df yi niye kullanıyorum ki bozuk zaten
-            # df = self.evds.get_data(
-            #    series=[meta["code"]],
-            #    startdate=self.date_imamoglu_arrested,
-            #    enddate=today,
-            #    aggregation_types=Aggregation.AVG,
-            #    formulas="",
-            #    frequency=meta["frequency"],
-            # )
-
             # TP.DK.USD.A -> DP_DK_USD_A
             column_name = meta["code"].replace(".", "_")
 
-            metric = await TrackedMetric.filter(evds_code=meta["code"]).first()
-
-            if not metric:
-                metric = TrackedMetric(
-                    name=meta["name"],
-                    description=meta["description"],
-                    source="evds",
-                    evds_code=meta["code"],
-                    url=None,
-                    unit=meta["unit"],
-                    category=meta["category"],
-                    data_type=DataTypeEnum(meta["data_type"]),
-                    frequency=FrequencyEnum(meta["frequency"]),
-                )
-                await metric.save()
+            metric, created = await TrackedMetric.get_or_create(
+                name=meta["name"],  # Use 'name' for lookup as it has the UNIQUE constraint
+                defaults={  # These defaults are used ONLY if a new metric is created
+                    "description": meta["description"],
+                    "source": "evds",
+                    "evds_code": meta["code"],
+                    "url": None,
+                    "unit": meta["unit"],
+                    "category": meta["category"],
+                    "data_type": DataTypeEnum(meta["data_type"]),
+                    "frequency": FrequencyEnum(meta["frequency"]),
+                }
+            )
+            if created:
+                print(f"Created new metric: {metric.name} (EVDS Code: {metric.evds_code})")
+            else:
+                # TODO: I might need to make it update other parts too(if I change the EVDS_SERIES variable again)
+                # If the metric already exists, ensure its evds_code is consistent
+                # This handles cases where a name might match, but the evds_code might be different initially
+                if metric.evds_code != meta["code"]:
+                    print(f"Updating evds_code for existing metric '{metric.name}' from {metric.evds_code} to {meta['code']}")
+                    metric.evds_code = meta["code"]
+                    await metric.save() # Save the updated metric
+                print(f"Using existing metric: {metric.name} (EVDS Code: {metric.evds_code})")
             print("METRIC BU ", metric)
 
             result: DataFrame | None = self.evds.get_data(
@@ -184,12 +183,17 @@ class Fetcher:
             )
             if result is None:
                 raise Exception("Couldn't fetch data.")
+                # TODO: maybe just give a warning and continue?
 
             result.ffill(inplace=True)
+            
+            if 'Tarih' not in result.columns:
+                print(f"Warning: 'Tarih' column not found in data for {metric.name}. Skipping.")
+                continue
 
-            # print(result)
+            print("!!!!!result",result)
             for index, series_data in result[1:].iterrows():
-                # print(series_data)
+                print("---- series_data: ----\n",series_data)
 
                 strp_format = "%d-%m-%Y"
                 if metric.frequency == FrequencyEnum.MONTHLY:
@@ -197,24 +201,37 @@ class Fetcher:
 
                 date_str = series_data["Tarih"]  # dd-mm-yyyy
                 if not isinstance(date_str, str):
-                    raise TypeError("date_str is not string")
+                    raise TypeError(f"date_str for {metric.name} is not a string. Type: {type(date_str)}")
 
-                value = series_data[column_name]
+                value = series_data.get(column_name)
+                
+                if value is None or isna(value):
+                    print(f"Warning: Value for {metric.name} on {date_str} is missing or NaN. Skipping data point.")
+                    continue
+                
+                try:
+                    # Convert value to float if it's not already
+                    value = float(value)
+                except ValueError:
+                    print(f"Warning: Could not convert value '{value}' for {metric.name} on {date_str} to float. Skipping.")
+                    continue
+                
+                parsed_date = datetime.strptime(date_str, strp_format).date()
 
-                # print("datestr", date_str, "value", value)
-
-                old_datapoint = MetricDataPoint.filter(
-                    metric=metric, date=datetime.strptime(date_str, strp_format).date()
-                ).first()
-                if old_datapoint is None:  # doesnt exist yet
-                    datapoint = MetricDataPoint(
-                        metric=metric,
-                        date=datetime.strptime(date_str, "%d-%m-%Y").date(),
-                        value=value,
-                    )
-                    await datapoint.save()
+                datapoint, created_datapoint = await MetricDataPoint.get_or_create(
+                    metric=metric,
+                    date=parsed_date,
+                    defaults={"value": value}
+                )
+                if created_datapoint:
+                    print(f"Added data point for {metric.name} on {parsed_date} with value {value}")
                 else:
-                    pass  # no need to create another one or update.
+                    if datapoint.value != value:
+                        print(f"Updating data point for {metric.name} on {parsed_date} from {datapoint.value} to {value}")
+                        datapoint.value = value
+                        await datapoint.save()
+                    else:
+                        print(f"Data point for {metric.name} on {parsed_date} already exists with same value. Skipping update.")
 
             time.sleep(1)
 
