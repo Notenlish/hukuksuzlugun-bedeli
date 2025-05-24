@@ -13,3 +13,10 @@ TORTOISE_ORM = {
         },
     },
 }
+FASTAPI_ADMIN = {
+    "admin_path": "/admin",
+    "title": "My Admin Panel",
+    #"logo_url": "https://your-logo.com/logo.png",  # optional
+    # "template_folders": ["templates"],  # required if using custom templates
+    "db_url": os.getenv("DATABASE_URL", None),
+}

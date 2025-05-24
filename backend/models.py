@@ -27,9 +27,9 @@ class DataSourceEnum(str, Enum):
     SCRAPER = "scraper"
 
 
-class UserPermission(str, Enum):
-    USER = "normal"
-    ADMIN = "admin"
+#class UserPermission(str, Enum):
+#    USER = "normal"
+#    ADMIN = "admin"
 
 
 class CategoryEnum(str, Enum):  # why is this not used anywhere?
@@ -47,14 +47,13 @@ class Account(models.Model):
     lastname = fields.CharField(max_length=50)
     password = fields.CharField(max_length=255)
 
-    role = fields.CharEnumField(UserPermission, default=UserPermission.USER)
+    # role = fields.CharEnumField(UserPermission, default=UserPermission.USER)
 
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
     def __str__(self):
         return f"Account: {self.name} {self.lastname}"
-
 
 class TrackedMetric(models.Model):
     id = fields.IntField(pk=True)

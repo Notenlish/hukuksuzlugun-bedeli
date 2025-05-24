@@ -1,6 +1,6 @@
 import enum
 import os
-from datetime import date, datetime
+from datetime import date, datetime,timedelta
 from typing import TypedDict
 
 import dotenv
@@ -49,31 +49,27 @@ class Fetcher:
         print("created evds client")
         self.date_imamoglu_arrested = date(2025, 2, 19)  # 19 mart 2025
 
-    async def populate_db_with_past_evds_data(self):
-        print("created session")
+    async def do_scheduled_task(self):
         today = date.today()
+        start = today - timedelta(days=2)
+        end = today
+        
+        await self.do_evds_stuff(EVDS_SERIES, start, end)
 
-        for key, meta in EVDS_SERIES.items():
+    async def do_evds_stuff(self, evds_series_data:dict[str, EVDSSeriesMeta], start:date, end:date):
+        for key, meta in evds_series_data.items():
             # df yi niye kullanıyorum ki bozuk zaten
-            df = self.evds.get_data(
-                series=[meta["code"]],
-                startdate=self.date_imamoglu_arrested,
-                enddate=today,
-                aggregation_types=Aggregation.AVG,
-                formulas="",
-                frequency=meta["frequency"],
-            )
-            print("Bu niye çalışıyor!?!?\n", df)
-            if df is None or df.empty:
-                print(f"No data for {key}!")
-                continue
+            #df = self.evds.get_data(
+            #    series=[meta["code"]],
+            #    startdate=self.date_imamoglu_arrested,
+            #    enddate=today,
+            #    aggregation_types=Aggregation.AVG,
+            #    formulas="",
+            #    frequency=meta["frequency"],
+            #)
 
             # TP.DK.USD.A -> DP_DK_USD_A
             column_name = meta["code"].replace(".", "_")
-
-            df[column_name] = df[
-                column_name
-            ].ffill()  # get rid of NaN for holidays, replace with the last available value
 
             metric = await TrackedMetric.filter(evds_code=meta["code"]).first()
 
@@ -104,16 +100,17 @@ class Fetcher:
 
             result.ffill(inplace=True)
 
-            print(result)
+            # print(result)
             for index, series_data in result[1:].iterrows():
-                print(series_data)
+                # print(series_data)
+                
                 date_str = series_data["Tarih"]  # dd-mm-yyyy
                 if not isinstance(date_str, str):
                     raise TypeError("date_str is not string")
 
                 value = series_data[column_name]
 
-                print("datestr", date_str, "value", value)
+                # print("datestr", date_str, "value", value)
 
                 old_datapoint = MetricDataPoint.filter(metric=metric, date=datetime.strptime(date_str, "%d-%m-%Y").date()).first()
                 if old_datapoint is None: # doesnt exist yet
@@ -126,8 +123,11 @@ class Fetcher:
                 else:
                     pass  # no need to create another one or update. 
 
+    async def populate_db_with_past_evds_data(self):
+        print("created session")
+        today = date.today()
 
-def start_scheduler(): ...
+        await self.do_evds_stuff(EVDS_SERIES, self.date_imamoglu_arrested, today)
 
 
 if __name__ == "__main__":

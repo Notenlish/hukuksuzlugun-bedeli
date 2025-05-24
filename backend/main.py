@@ -3,13 +3,28 @@ from contextlib import asynccontextmanager
 from datetime import date, datetime
 from enum import Enum
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler 
+from apscheduler.triggers.interval import IntervalTrigger
 from db import close_db, init_db
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fetcher import Fetcher
 from settings import TORTOISE_ORM
 from tortoise import Tortoise, fields, queryset
 from tortoise.contrib.fastapi import register_tortoise
+
+fetcher = Fetcher()
+
+# Create a scheduler instance
+#scheduler = BackgroundScheduler()  # for normal functions
+scheduler = AsyncIOScheduler()
+
+
+async def scheduled_fetch_task():
+    print(f"Scheduled task executed at: {datetime.now()}")
+    await fetcher.do_scheduled_task()
 
 
 @asynccontextmanager
@@ -17,11 +32,19 @@ async def lifespan(app: FastAPI):
     print("starting api")
     await init_db()
 
+    scheduler.add_job(
+        scheduled_fetch_task, IntervalTrigger(hours=2), id="test_periodic_job"
+    )
+    scheduler.start()
+
     yield
 
     print("shutting down api")
 
     await close_db()
+
+    print("Shutting down scheduler...")
+    scheduler.shutdown()
     # nothing here, code after yield will be run on shutdown
 
 
@@ -98,20 +121,26 @@ async def viewdb_endpoint(
                         # Iterate over the model's fields to build a dictionary
                         for field_name in record._meta.fields_map.keys():
                             value = getattr(record, field_name)
-                            
+
                             # Basic serialization
                             if isinstance(value, (datetime, date)):
                                 record_data[field_name] = value.isoformat()
                             elif isinstance(value, Enum):
-                                record_data[field_name] = value.value  # get the primitive value of the enum.
+                                record_data[field_name] = (
+                                    value.value
+                                )  # get the primitive value of the enum.
                             elif isinstance(value, fields.ReverseRelation):
                                 related_ids = []  # serialize as a list of ID's
-                                async for related_obj in value: # ReverseRelation is an awaitable queryset
-                                    related_ids.append(related_obj.pk) # Assuming 'pk' is the primary key
+                                async for (
+                                    related_obj
+                                ) in value:  # ReverseRelation is an awaitable queryset
+                                    related_ids.append(
+                                        related_obj.pk
+                                    )  # Assuming 'pk' is the primary key
                                 record_data[field_name] = related_ids
                             elif isinstance(value, queryset.QuerySet):
                                 model = await value.all()
-                                record_data[field_name] = model.pk
+                                record_data[field_name] = model.pk  # type: ignore
                             else:
                                 record_data[field_name] = value
                         # print("!!!!! Adding to serialized", record_data)
