@@ -7,7 +7,7 @@ async def _():
     Tortoise.get_connection("default")
 
     fetcher = Fetcher()
-    await fetcher.fetch_inflation()
-    #await fetcher.populate_db_with_past_evds_data()
+    # await fetcher.fetch_inflation()
+    await fetcher.populate_db_with_past_evds_data()
 
 run_async(_())
