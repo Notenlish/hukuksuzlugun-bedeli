@@ -1,4 +1,4 @@
-name: Deploy Python App to VDS
+name: Deploy Python App to VDS (PAT Method with venv)
 
 on:
   push:
@@ -15,10 +15,13 @@ jobs:
 
     - name: Setup SSH on GitHub Actions Runner
       run: |
+        # Create .ssh directory if it doesn't exist and set permissions
         mkdir -p ~/.ssh
+        # Write the VDS SSH private key from GitHub Secrets to id_rsa
         echo "${{ secrets.VDS_SSH_KEY }}" > ~/.ssh/id_rsa
+        # Set strict permissions for the private key
         chmod 600 ~/.ssh/id_rsa
-        # Add VDS's host key to runner's known_hosts
+        # Add VDS's host key to runner's known_hosts to prevent SSH warnings/errors
         ssh-keyscan -H ${{ secrets.VDS_IP }} >> ~/.ssh/known_hosts
 
     - name: Deploy application and service file
@@ -27,96 +30,83 @@ jobs:
         VDS_USER="${{ secrets.VDS_USER }}"
         VDS_IP="${{ secrets.VDS_IP }}"
         APP_DIR="/opt/my-python-app"
-        REPO_SSH="git@github.com:Notenlish/hukuksuzlugun-bedeli.git"
+        # Use HTTPS with GitHub Personal Access Token (PAT) for cloning
+        # Format: https://USERNAME:PAT@github.com/OWNER/REPO.git
+        REPO_HTTPS="https://oauth2:${{ secrets.GH_PAT }}@github.com/Notenlish/hukuksuzlugun-bedeli.git"
         SERVICE_FILE_REMOTE="/etc/systemd/system/myapp.service"
-        SERVICE_FILE_LOCAL="./backend/myapp.service" # Adjust this path if your service file is elsewhere
+        SERVICE_FILE_LOCAL="./backend/myapp.service" # Path to your local service file
 
-        # --- IMPORTANT SSH KEY AND HOST KEY SETUP ON VDS ---
-        # 1. Transfer GitHub Deploy Key to VDS
-        #    This secret (VDS_GITHUB_DEPLOY_KEY) should contain the PRIVATE KEY
-        #    of an SSH key pair that you've added as a Deploy Key to your GitHub repo.
-        echo "Transferring GitHub deploy key to VDS..."
-        # Using printf to ensure no extra newlines from echo, and direct write
-        # Also ensure .ssh directory has correct permissions before putting key
-        printf "%s" "${{ secrets.VDS_GITHUB_DEPLOY_KEY }}" | ssh "$VDS_USER@$VDS_IP" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat > ~/.ssh/github_deploy_key && chmod 600 ~/.ssh/github_deploy_key"
-
-        # 2. SSH into VDS to perform initial setup/update and configure Git
+        # --- SSH into VDS to perform initial setup/update and clone with PAT ---
         ssh "$VDS_USER@$VDS_IP" << 'EOF'
-          # Enable verbose shell output for debugging
-          set -x
+          # Enable verbose shell output and exit immediately if any command fails
+          set -ex
 
-          APP_DIR="/opt/my-python-app" # Redefine for the remote shell context
-          REPO_SSH="git@github.com:Notenlish/hukuksuzlugun-bedeli.git"
+          # Redefine variables for the remote shell context
+          APP_DIR="/opt/my-python-app"
+          REPO_HTTPS="${{ secrets.GH_PAT }}" # This will be replaced by the actual PAT in the outer shell, then used in the clone command.
+                                             # Note: The REPO_HTTPS variable itself isn't directly used here; the PAT is interpolated into the git clone command.
 
-          # --- DEBUGGING: Verify SSH key and known_hosts on VDS ---
-          echo "--- Debugging SSH setup on VDS ---"
-          ls -la ~/.ssh/
-          
-          # Ensure known_hosts exists before attempting to cat it for debugging
-          touch ~/.ssh/known_hosts
+          echo "Updating system packages and installing prerequisites (git, python3-venv, pip)..."
+          # Update package lists
+          sudo apt update
+          # Install necessary packages: git, python3-venv (for virtual environments), python3-pip
+          sudo apt install git python3-venv python3-pip -y
 
-          cat ~/.ssh/github_deploy_key # Verify content (sensitive, but for debug)
-          cat ~/.ssh/known_hosts # Verify content
-
-          # IMPORTANT: Sanitize the private key file to handle potential line ending issues
-          # This requires 'dos2unix' to be installed on your VDS (sudo apt install dos2unix)
-          if command -v dos2unix &> /dev/null; then
-              echo "Running dos2unix on github_deploy_key..."
-              dos2unix ~/.ssh/github_deploy_key
-          else
-              echo "Warning: dos2unix not found. Consider installing it on your VDS for key sanitization."
-          fi
-
-
-          # Add github.com's host key to the VDS's known_hosts
-          echo "Adding github.com to VDS's known_hosts (if not already present)..."
-          # Use ssh-keyscan with -H to hash hostnames and append, redirect stderr to /dev/null
-          ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
-          chmod 600 ~/.ssh/known_hosts
-
-          echo "--- Testing SSH connection to GitHub directly ---"
-          # Test SSH connection using the deploy key and specific known_hosts
-          # This command will give more detailed error messages if SSH fails
-          ssh -i ~/.ssh/github_deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -T git@github.com || { echo "SSH connection test failed. Check key, permissions, and host key."; exit 1; }
-          echo "SSH connection test successful."
-
-          # Configure Git to use the transferred deploy key for authentication
-          echo "Configuring Git to use the deploy key for GitHub..."
-          # Ensure this is set globally for the user running git clone
-          git config --global core.sshCommand "ssh -i ~/.ssh/github_deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes"
-
-          # Verify git config
-          echo "--- Verifying Git SSH command config ---"
-          git config --global core.sshCommand
-
-          # Perform Git operations
+          echo "Cloning/Fetching repository using HTTPS with Personal Access Token..."
           if [ -d "$APP_DIR/.git" ]; then
-              echo "Repo exists. Fetching latest..."
+              echo "Repository already exists. Fetching latest changes..."
               cd "$APP_DIR"
               git fetch origin
-              git reset --hard origin/main
+              git reset --hard origin/main # Hard reset to match the remote main branch
           else
-              echo "Cloning repo..."
-              git clone "$REPO_SSH" "$APP_DIR"
+              echo "Repository does not exist. Cloning it now..."
+              # Ensure the parent directory for the application exists
+              mkdir -p "$(dirname "$APP_DIR")"
+              # Clone the repository using HTTPS with the PAT for authentication
+              # The PAT is directly interpolated into the URL here.
+              git clone "https://oauth2:${{ secrets.GH_PAT }}@github.com/Notenlish/hukuksuzlugun-bedeli.git" "$APP_DIR"
           fi
 
+          # IMPORTANT: Remove the PAT from the shell history on the VDS for security
+          # This line attempts to remove the last command from the shell history.
+          history -d $((HISTCMD-1)) || true
+          
           cd "$APP_DIR/backend"
-          pip3 install -r requirements.txt
+          echo "Setting up Python virtual environment..."
+          # Create a virtual environment named 'venv'
+          python3 -m venv venv
+          # Activate the virtual environment
+          source venv/bin/activate
+          
+          echo "Installing Python dependencies into the virtual environment..."
+          # Install dependencies using the venv's pip
+          pip install -r requirements.txt
+          
+          # Deactivate the virtual environment for the current SSH session
+          deactivate
         EOF
 
-        # Transfer the service file using scp (from GitHub Actions runner to VDS)
+        # Transfer the service file using scp from the GitHub Actions runner to VDS
         echo "Transferring systemd service file..."
         scp "$SERVICE_FILE_LOCAL" "$VDS_USER@$VDS_IP:$SERVICE_FILE_REMOTE"
 
-        # SSH back into VDS to manage the service
+        # SSH back into VDS to manage the systemd service
         ssh "$VDS_USER@$VDS_IP" << 'EOF_SERVICE_MGMT'
-          set -e
+          # Enable verbose shell output and exit immediately if any command fails
+          set -ex
 
-          SERVICE_FILE="/etc/systemd/system/myapp.service" # Redefine for the remote shell context
+          # Redefine service file path for the remote shell context
+          SERVICE_FILE="/etc/systemd/system/myapp.service"
 
           echo "Reloading systemd daemon and restarting service..."
+          # Reload the systemd manager configuration
           systemctl daemon-reexec
           systemctl daemon-reload
-          systemctl enable myapp || true # '|| true' to prevent error if already enabled
+          # Enable the service to start on boot (if not already enabled). '|| true' prevents error if already enabled.
+          systemctl enable myapp || true
+          # Restart the application service
           systemctl restart myapp
+          echo "Service status:"
+          # Display the status of the service without pagination
+          systemctl status myapp --no-pager
         EOF_SERVICE_MGMT
