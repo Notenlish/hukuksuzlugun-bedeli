@@ -51,15 +51,15 @@ export default function ContactPage() {
     });
 
     if (response.ok) {
-      setSuccess("Successfully sent message.");
+      setSuccess("Mesajınız gönderildi.");
       return;
     }
-    setError("Couldn't send message");
+    setError("Mesajınız maalesef gönderilemedi.");
     return;
   };
   return (
     <div className="py-8 px-12 flex flex-col items-center">
-      <TypographyH1>Contact</TypographyH1>
+      <TypographyH1>İletişim</TypographyH1>
       <Form {...form}>
         <form className="space-y-8 w-3xl" onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
@@ -67,11 +67,11 @@ export default function ContactPage() {
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>Başlık</FormLabel>
                 <FormControl>
-                  <Input placeholder="Example Title" {...field}></Input>
+                  <Input placeholder="Örnek Başlık" {...field}></Input>
                 </FormControl>
-                <FormDescription>Enter a title</FormDescription>
+                <FormDescription>Başlık Girin</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -81,11 +81,11 @@ export default function ContactPage() {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>Mesaj</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Example Description" {...field} />
+                  <Textarea placeholder="Örnek Mesaj" {...field} />
                 </FormControl>
-                <FormDescription>Enter a description</FormDescription>
+                <FormDescription>Mesaj girin</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -95,16 +95,16 @@ export default function ContactPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>E-posta</FormLabel>
                 <FormControl>
-                  <Input placeholder="Example Email" {...field} />
+                  <Input placeholder="Örnek E-posta" {...field} />
                 </FormControl>
-                <FormDescription>Enter an email</FormDescription>
+                <FormDescription>E-posta girin</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button>Send</Button>
+          <Button>Gönder</Button>
         </form>
       </Form>
       <div className="text-red-500">{error}</div>
