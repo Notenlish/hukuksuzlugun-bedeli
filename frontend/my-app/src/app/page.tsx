@@ -19,7 +19,7 @@ export default function Home() {
     {
       type: "DAILY_EUR_TRY",
       format_template:
-        "Euro <span class='text-sky-600 font-bold'>{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
+        "Euro <span class='text-sky-600 font-bold'>%{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
       changePercentage: 9.63,
       startValue: 40.09,
       endValue: 43.82,
@@ -27,7 +27,7 @@ export default function Home() {
     {
       type: "MONTHLY_CPI",
       format_template:
-        "TÜFE <span class='text-red-700 font-bold'>{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
+        "TÜFE <span class='text-red-700 font-bold'>%{changePercentage}</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
       changePercentage: 0,
       startValue: 0,
       endValue: 0,
@@ -35,7 +35,7 @@ export default function Home() {
     {
       type: "INTEREST(WEEKLY)",
       format_template:
-        "Faiz <span class='text-orange-700 font-bold'>{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
+        "Tüketici Kredisi Faiz Oranları <span class='text-orange-700 font-bold'>%{changePercentage}</span> arttı, %{startValue}{den} <b>%{endValue}{e}</b> vardı.",
       changePercentage: 0,
       startValue: 0,
       endValue: 0,
