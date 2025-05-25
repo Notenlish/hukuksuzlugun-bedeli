@@ -19,7 +19,7 @@ export default function Home() {
     {
       type: "DAILY_EUR_TRY",
       format_template:
-        "Euro <span class='text-sky-600 font-bold'>%{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
+        "Euro <span class='text-sky-600 font-bold'>%{changePercentage}</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
       changePercentage: 9.63,
       startValue: 40.09,
       endValue: 43.82,
