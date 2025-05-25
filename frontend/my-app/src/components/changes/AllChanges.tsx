@@ -1,5 +1,5 @@
-import { BRAND } from "zod";
-import { TypographyP } from "../ui/typography";
+// import { TypographyP } from "../ui/typography";
+import parse from "html-react-parser";
 
 import { differenceItem } from "@/types";
 import { den_dan_eki, e_a_eki } from "@/lib/utils";
@@ -9,20 +9,23 @@ export default function AllChanges({
 }: {
   differences: differenceItem[];
 }) {
+  const roundToNthDecimal = (num: number, n: number) => {
+    const factor = Math.pow(10, n);
+    return Math.round((num + Number.EPSILON) * factor) / factor;
+  };
   return (
     <div className="block text-center w-full">
       {differences.map((d, i) => {
         let text = d.format_template
           .replaceAll("{dan}", "{den}")
           .replaceAll("{a}", "{e}")
-          //@ts-expect-error ...
-          .replace("{changeValue}", d.changeValue)
-          //@ts-expect-error ...
-          .replace("{changePerc}", d.changePerc)
-          //@ts-expect-error ...
-          .replace("{startValue}", d.startValue)
-          //@ts-expect-error ...
-          .replace("{endValue}", d.endValue);
+          .replace("{changeValue}", roundToNthDecimal(d.changeValue as number, 2).toString())
+          .replace(
+            "{changePercentage}",
+            roundToNthDecimal(d.changePercentage as number, 2).toString(),
+          )
+          .replace("{startValue}", roundToNthDecimal(d.startValue as number, 2).toString())
+          .replace("{endValue}", roundToNthDecimal(d.endValue as number, 2).toString());
 
         while (text.includes("{den}")) {
           const last = text.slice(
@@ -37,9 +40,9 @@ export default function AllChanges({
         }
 
         return (
-          <div key={i}>
-            {text} <br />
-          </div>
+          <p className="leading-8 text-xl" key={i}>
+            {parse(text)} <br />
+          </p>
         );
       })}
       {/*

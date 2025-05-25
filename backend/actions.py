@@ -1,5 +1,6 @@
 from models import Account
 from passlib import bcrypt
+
 async def create_user(name, lastname, email, password:str, role=None):
     h = bcrypt.hash(password)
     await Account.create(
@@ -7,7 +8,7 @@ async def create_user(name, lastname, email, password:str, role=None):
         name=name,lastname=lastname, password=h,role=role
     )
 
-async def 
+# async def 
 
 async def verify_password(email, password):
     a = await Account.get(email=email)

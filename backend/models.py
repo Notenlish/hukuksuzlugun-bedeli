@@ -88,3 +88,12 @@ class MetricDataPoint(models.Model):
 
     class Meta:  # pyright: ignore
         unique_together = ("metric", "date")
+    
+    def __str__(self) -> str:
+        a = f"<MetricDataPoint metric:{str(self.metric)} date:{self.date}"
+        if self.value:
+            a+=f" value:{self.value}"
+        if self.value_text:
+            a+=f" value_text:{self.value_text}"
+        a+=">"
+        return a

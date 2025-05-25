@@ -10,3 +10,4 @@ fastapi-admin
 apscheduler
 beautifulsoup4
 aiohttp
+colorama

@@ -2,7 +2,10 @@ import enum
 import os
 import time
 from datetime import date, datetime, timedelta
-from typing import Any, TypedDict
+from typing import TypedDict
+import colorama
+
+colorama.init()
 
 import aiohttp
 import dotenv
@@ -42,7 +45,7 @@ class EVDSSeriesMeta(TypedDict):
 EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
     "DAILY_USD_TRY": {
         "name": "USD/TRY Exchange Rate",
-        "code": "TP.DK.USD.A",
+        "code": "TP.DK.USD.S",
         "unit": "TRY",
         "frequency": FrequencyEnum.DAILY,
         "data_type": DataType.NUMERIC,
@@ -51,7 +54,7 @@ EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
     },
     "DAILY_EUR_TRY": {
         "name": "EUR/TRY Exchange Rate",
-        "code": "TP.DK.EUR.A",
+        "code": "TP.DK.EUR.S",
         "unit": "TRY",
         "frequency": FrequencyEnum.DAILY,
         "data_type": DataType.NUMERIC,
@@ -66,6 +69,15 @@ EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
         "data_type": DataType.NUMERIC,
         "category": CategoryEnum.ECONOMY,
         "description": "Monthly inflation rate (CPI)",
+    },
+    "INTEREST(WEEKLY)": {
+        "name": "Consumer Credit IN TL INTEREST RATE",
+        "code": "TP.KTFTUK",
+        "unit": "index",
+        "frequency": FrequencyEnum.WEEKLY,
+        "data_type": DataType.NUMERIC,
+        "category": CategoryEnum.ECONOMY,
+        "description": "Consumer Credit (Opened in TL) (Needs + Vehicle + Housing) (Flow Data,%) - Level",
     },
     # I got rid of the 10 year bond yield because EVDS doesnt give that data to me.
 }
@@ -88,7 +100,8 @@ class Fetcher:
         print("starting up...")
         self.evds = evdsclient.evdsAPI(EVDS_API_KEY)
         print("created evds client")
-        self.date_imamoglu_arrested = date(2025, 2, 19)  # 19 mart 2025
+        self.date_imamoglu_arrested = date(2025, 3, 19)  # 19 mart 2025
+        self.actual_fetch_start = self.date_imamoglu_arrested - timedelta(days=7)
 
     async def fetch_inflation(self):
         async with aiohttp.ClientSession() as session:
@@ -110,7 +123,9 @@ class Fetcher:
 
                 perc_inflation = float(f"{whole_part}.{decimal_part}")
         enag_inflation = ENAG_DATA["INFLATION"]
-        metric = TrackedMetric.filter(source=DataSourceEnum.ENAG, name=enag_inflation).first()
+        metric = TrackedMetric.filter(
+            source=DataSourceEnum.ENAG, name=enag_inflation
+        ).first()
         if not metric:
             metric = TrackedMetric(
                 name=enag_inflation["name"],
@@ -124,11 +139,13 @@ class Fetcher:
                 frequency=FrequencyEnum(enag_inflation["frequency"]),
             )
             await metric.save()
-        
+
         today = date.today()
-        cur_month_date = date(year=today.year, month=today.month, day=1)  # always take the first day
-        MetricDataPoint.filter(metric=metric, date=cur_month_date)  
-        
+        cur_month_date = date(
+            year=today.year, month=today.month, day=1
+        )  # always take the first day
+        MetricDataPoint.filter(metric=metric, date=cur_month_date)
+
         # I just realized the enag website gives the inflation data for february. It's may. Fuck.
         # Great I just spent god knows how long working on this just for it to be useless.
         # Why can't enag just provide an api
@@ -149,7 +166,9 @@ class Fetcher:
             column_name = meta["code"].replace(".", "_")
 
             metric, created = await TrackedMetric.get_or_create(
-                name=meta["name"],  # Use 'name' for lookup as it has the UNIQUE constraint
+                name=meta[
+                    "name"
+                ],  # Use 'name' for lookup as it has the UNIQUE constraint
                 defaults={  # These defaults are used ONLY if a new metric is created
                     "description": meta["description"],
                     "source": "evds",
@@ -159,25 +178,32 @@ class Fetcher:
                     "category": meta["category"],
                     "data_type": DataTypeEnum(meta["data_type"]),
                     "frequency": FrequencyEnum(meta["frequency"]),
-                }
+                },
             )
             if created:
-                print(f"Created new metric: {metric.name} (EVDS Code: {metric.evds_code})")
+                print(
+                    f"Created new metric: {metric.name} (EVDS Code: {metric.evds_code})"
+                )
             else:
                 # TODO: I might need to make it update other parts too(if I change the EVDS_SERIES variable again)
                 # If the metric already exists, ensure its evds_code is consistent
                 # This handles cases where a name might match, but the evds_code might be different initially
                 if metric.evds_code != meta["code"]:
-                    print(f"Updating evds_code for existing metric '{metric.name}' from {metric.evds_code} to {meta['code']}")
+                    print(
+                        f"Updating evds_code for existing metric '{metric.name}' from {metric.evds_code} to {meta['code']}"
+                    )
                     metric.evds_code = meta["code"]
-                    await metric.save() # Save the updated metric
-                print(f"Using existing metric: {metric.name} (EVDS Code: {metric.evds_code})")
-            print("METRIC BU ", metric)
+                    await metric.save()  # Save the updated metric
+                print(
+                    f"Using existing metric: {metric.name} (EVDS Code: {metric.evds_code})"
+                )
+            
+            print(f"{colorama.Fore.RED}METRIC{colorama.Fore.WHITE} BU: ", metric)
 
             result: DataFrame | None = self.evds.get_data(
                 [metric.evds_code],
-                self.date_imamoglu_arrested,
-                datetime.today().date(),
+                start,
+                end,
                 aggregation_types="avg",
                 frequency=FrequencyEVDS[metric.frequency].value,
             )
@@ -186,60 +212,75 @@ class Fetcher:
                 # TODO: maybe just give a warning and continue?
 
             result.ffill(inplace=True)
-            
-            if 'Tarih' not in result.columns:
-                print(f"Warning: 'Tarih' column not found in data for {metric.name}. Skipping.")
+
+            if "Tarih" not in result.columns:
+                print(
+                    f"Warning: 'Tarih' column not found in data for {metric.name}. Skipping."
+                )
                 continue
 
-            print("!!!!!result",result)
-            for index, series_data in result[1:].iterrows():
-                print("---- series_data: ----\n",series_data)
+            print("!!!!!result", result)
+            for index, series_data in result.iterrows():
+                # print("---- series_data: ----:::::\n", series_data)
 
-                strp_format = "%d-%m-%Y"
+                strp_format = "%d-%m-%Y"  # daily
                 if metric.frequency == FrequencyEnum.MONTHLY:
                     strp_format = "%Y-%m"  # yyyy-m (month isnt zero padded)
 
                 date_str = series_data["Tarih"]  # dd-mm-yyyy
                 if not isinstance(date_str, str):
-                    raise TypeError(f"date_str for {metric.name} is not a string. Type: {type(date_str)}")
+                    raise TypeError(
+                        f"date_str for {metric.name} is not a string. Type: {type(date_str)}"
+                    )
 
                 value = series_data.get(column_name)
-                
+
                 if value is None or isna(value):
-                    print(f"Warning: Value for {metric.name} on {date_str} is missing or NaN. Skipping data point.")
+                    print(
+                        f"Warning: Value for {metric.name} on {date_str} is missing or NaN. Skipping data point."
+                    )
                     continue
-                
+
                 try:
                     # Convert value to float if it's not already
                     value = float(value)
                 except ValueError:
-                    print(f"Warning: Could not convert value '{value}' for {metric.name} on {date_str} to float. Skipping.")
+                    print(
+                        f"Warning: Could not convert value '{value}' for {metric.name} on {date_str} to float. Skipping."
+                    )
                     continue
-                
+
                 parsed_date = datetime.strptime(date_str, strp_format).date()
 
                 datapoint, created_datapoint = await MetricDataPoint.get_or_create(
-                    metric=metric,
-                    date=parsed_date,
-                    defaults={"value": value}
+                    metric=metric, date=parsed_date, defaults={"value": value}
                 )
                 if created_datapoint:
-                    print(f"Added data point for {metric.name} on {parsed_date} with value {value}")
+                    print(
+                        f"Added data point for {metric.name} on {parsed_date} with value {value}"
+                    )
                 else:
                     if datapoint.value != value:
-                        print(f"Updating data point for {metric.name} on {parsed_date} from {datapoint.value} to {value}")
+                        print(
+                            f"Updating data point for {metric.name} on {parsed_date} from {datapoint.value} to {value}"
+                        )
                         datapoint.value = value
                         await datapoint.save()
                     else:
-                        print(f"Data point for {metric.name} on {parsed_date} already exists with same value. Skipping update.")
+                        print(
+                            f"{colorama.Fore.LIGHTBLACK_EX}Data point for {metric.name} on {parsed_date} already exists with same value. Skipping update.{colorama.Fore.WHITE}"
+                        )
 
             time.sleep(1)
 
     async def populate_db_with_past_evds_data(self):
         print("created session")
         today = date.today()
+        # Get data of a full week before Imamoglu's arrest
+        startdate = self.actual_fetch_start
+        print(f"STARTDATE: {startdate}")
 
-        await self.do_evds_stuff(EVDS_SERIES, self.date_imamoglu_arrested, today)
+        await self.do_evds_stuff(EVDS_SERIES, startdate, today)
 
 
 if __name__ == "__main__":

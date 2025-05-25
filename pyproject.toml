@@ -1,0 +1,6 @@
+
+[tool.pyrefly]
+search_path = ["backend/"]  # analyze these directories
+#python_executable = ".venv/bin/python3"  # not used
+# site_package_path=[".venv/lib/python3.12/site-packages"]
+# python_interpreter=".venv/bin/python3"

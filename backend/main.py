@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from enum import Enum
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -10,10 +10,16 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Security, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
-from fetcher import Fetcher
+from fetcher import EVDS_SERIES, Fetcher
+from models import DataTypeEnum, FrequencyEnum, MetricDataPoint, TrackedMetric
 from settings import TORTOISE_ORM
 from tortoise import Tortoise, fields, queryset
 from tortoise.contrib.fastapi import register_tortoise
+from utils import (
+    first_day_of_current_month,
+    first_day_of_the_previous_month,
+    last_friday_on_or_before,
+)
 
 fetcher = Fetcher()
 
@@ -94,8 +100,58 @@ async def public_endpoint():
 
 
 @app.post("/get-change")
-async def get_change_endpoint(api_key:str=Depends(api_key_required)):
-    return JSONResponse(content={"dollarChange":{"old":36,"new":38}})
+async def get_change_endpoint(api_key: str = Depends(api_key_required)):
+    print("GET CHANGE ASDASDMASKDMLASLKDM")
+    output = {}
+    for key, value in EVDS_SERIES.items():
+        metric = await TrackedMetric.filter(name=value["name"]).first()
+        assert metric is not None
+
+        freq = value["frequency"]
+
+        if freq == FrequencyEnum.DAILY:
+            startdate = fetcher.date_imamoglu_arrested
+            enddate = date.today()
+        elif freq==FrequencyEnum.WEEKLY:
+            startdate = last_friday_on_or_before(fetcher.date_imamoglu_arrested)  # TODO: change this to date_imamoglu_arrested maybe?
+            # lazy EVDS api lags behind and doesnt update data on schedule. F*ck you evds.
+            enddate = last_friday_on_or_before(date.today() - timedelta(days=7))
+        elif freq == FrequencyEnum.MONTHLY:
+            startdate = first_day_of_current_month(
+                fetcher.date_imamoglu_arrested
+            )  # first_day_of_the_next_month(fetcher.date_imamoglu_arrested)
+            enddate = first_day_of_the_previous_month(date.today())
+        else:
+            raise Exception(f"I haven't coded anything for this frequency: {freq}")
+
+        # (2025, 3, 19) = date imamoglu arrested
+        print(metric)
+        print(startdate, enddate)
+
+        start = await MetricDataPoint.filter(metric=metric, date=startdate).first()
+        end = await MetricDataPoint.filter(metric=metric, date=enddate).first()
+        
+
+        if start is None or end is None:
+            raise Exception(f"A value is null. start is {start} end is {end}.")
+        
+        print(start.value, end.value)
+
+        if metric.data_type == DataTypeEnum.numeric:
+            change_value = end.value - start.value
+            change_perc = 100 * (change_value / start.value)
+            output[key] = {
+                "changeValue": change_value,
+                "changePercentage": change_perc,
+                "startValue": start.value,
+                "endValue": end.value,
+            }
+        else:
+            raise Exception(
+                f"I haven't coded anything for this datatype: {metric.data_type}"
+            )
+    return JSONResponse(content=output)
+
 
 @app.post("/viewdb")
 async def viewdb_endpoint(
