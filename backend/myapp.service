@@ -1,0 +1,12 @@
+[Unit]
+Description=My Python App
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/my-python-app/backend
+ExecStart=/usr/bin/env uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

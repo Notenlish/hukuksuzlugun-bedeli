@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout (just to start workflow, not needed on server)
+    - name: Checkout repository
+      # This step is essential now as we need to access files from the repo (like myapp.service)
       uses: actions/checkout@v4
 
     - name: Setup SSH
@@ -20,49 +21,52 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.VDS_IP }} >> ~/.ssh/known_hosts
 
-    - name: SSH into VDS and Deploy
+    - name: Deploy application and service file
       run: |
-        ssh ${{ secrets.VDS_USER }}@${{ secrets.VDS_IP }} << 'EOF'
+        # Define variables for the remote server
+        VDS_USER="${{ secrets.VDS_USER }}"
+        VDS_IP="${{ secrets.VDS_IP }}"
+        APP_DIR="/opt/my-python-app"
+        REPO_SSH="git@github.com:Notenlish/hukuksuzlugun-bedeli.git"
+        SERVICE_FILE_REMOTE="/etc/systemd/system/myapp.service"
+        SERVICE_FILE_LOCAL="./backend/myapp.service" # Adjust this path if your service file is elsewhere
+
+        # SSH into VDS and perform initial setup/update
+        ssh "$VDS_USER@$VDS_IP" << 'EOF'
           set -e
-    
-          APP_DIR="/opt/my-python-app"
+
+          APP_DIR="/opt/my-python-app" # Redefine for the remote shell context
           REPO_SSH="git@github.com:Notenlish/hukuksuzlugun-bedeli.git"
-    
+
           if [ -d "$APP_DIR/.git" ]; then
               echo "Repo exists. Fetching latest..."
-              cd $APP_DIR
+              cd "$APP_DIR"
               git fetch origin
               git reset --hard origin/main
           else
               echo "Cloning repo..."
-              git clone $REPO_SSH $APP_DIR
+              git clone "$REPO_SSH" "$APP_DIR"
           fi
-    
-          cd $APP_DIR/backend
+
+          cd "$APP_DIR/backend"
           pip3 install -r requirements.txt
-    
-          # Create systemd service if it doesn't exist
-          SERVICE_FILE="/etc/systemd/system/myapp.service"
-          if [ ! -f "$SERVICE_FILE" ]; then
-            echo "Creating systemd service..."
-            cat <<EOL > $SERVICE_FILE
-    [Unit]
-    Description=My Python App
-    After=network.target
-    
-    [Service]
-    User=root
-    WorkingDirectory=$APP_DIR/backend
-    ExecStart=/usr/bin/env uvicorn main:app --host 0.0.0.0 --port 8000
-    Restart=always
-    
-    [Install]
-    WantedBy=multi-user.target
-    EOL
-            systemctl daemon-reexec
-            systemctl daemon-reload
-            systemctl enable myapp
-          fi
-    
-          systemctl restart myapp
         EOF
+
+        # Transfer the service file using scp
+        echo "Transferring systemd service file..."
+        scp "$SERVICE_FILE_LOCAL" "$VDS_USER@$VDS_IP:$SERVICE_FILE_REMOTE"
+
+        # SSH back into VDS to manage the service
+        ssh "$VDS_USER@$VDS_IP" << 'EOF_SERVICE_MGMT'
+          set -e
+
+          SERVICE_FILE="/etc/systemd/system/myapp.service" # Redefine for the remote shell context
+
+          # Check if the service file was just created/updated and needs enabling
+          # This check is simplified as scp will always overwrite/create
+          echo "Reloading systemd daemon and restarting service..."
+          systemctl daemon-reexec
+          systemctl daemon-reload
+          systemctl enable myapp || true # '|| true' to prevent error if already enabled
+          systemctl restart myapp
+        EOF_SERVICE_MGMT
