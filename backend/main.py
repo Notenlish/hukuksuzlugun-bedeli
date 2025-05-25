@@ -2,6 +2,10 @@ import os
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
 from enum import Enum
+from dotenv import load_dotenv
+
+print("Loading .env file. Loading ENVIRONMENT VARIABLES.")
+load_dotenv(".env")
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
