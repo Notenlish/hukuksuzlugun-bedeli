@@ -1,4 +1,4 @@
-name: Deploy Python App to VDS (PAT Method with venv)
+name: Deploy Python App to VDS (PAT Method with venv and Python 3.12)
 
 on:
   push:
@@ -31,7 +31,6 @@ jobs:
         VDS_IP="${{ secrets.VDS_IP }}"
         APP_DIR="/opt/my-python-app"
         # Use HTTPS with GitHub Personal Access Token (PAT) for cloning
-        # Format: https://USERNAME:PAT@github.com/OWNER/REPO.git
         REPO_HTTPS="https://oauth2:${{ secrets.GH_PAT }}@github.com/Notenlish/hukuksuzlugun-bedeli.git"
         SERVICE_FILE_REMOTE="/etc/systemd/system/myapp.service"
         SERVICE_FILE_LOCAL="./backend/myapp.service" # Path to your local service file
@@ -43,14 +42,28 @@ jobs:
 
           # Redefine variables for the remote shell context
           APP_DIR="/opt/my-python-app"
-          REPO_HTTPS="${{ secrets.GH_PAT }}" # This will be replaced by the actual PAT in the outer shell, then used in the clone command.
-                                             # Note: The REPO_HTTPS variable itself isn't directly used here; the PAT is interpolated into the git clone command.
 
-          echo "Updating system packages and installing prerequisites (git, python3-venv, pip)..."
-          # Update package lists
+          # --- IMPORTANT: Forcefully clear apt locks ---
+          echo "Attempting to clear any existing apt locks..."
+          sudo killall apt apt-get || true
+          sudo rm -f /var/lib/dpkg/lock-frontend
+          sudo rm -f /var/lib/dpkg/lock
+          sudo rm -f /var/cache/apt/archives/lock
+          sudo dpkg --configure -a || true
+          echo "Apt lock clearing attempt complete."
+          # --- End of apt lock clearing ---
+
+          echo "Updating system packages and installing prerequisites..."
           sudo apt update
-          # Install necessary packages: git, python3-venv (for virtual environments), python3-pip
-          sudo apt install git python3-venv python3-pip -y
+
+          # Install software-properties-common to manage PPAs
+          sudo apt install -y software-properties-common
+          # Add the 'deadsnakes' PPA for newer Python versions
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt update
+
+          # Install Python 3.12 and its venv/pip modules
+          sudo apt install git python3.12 python3.12-venv python3.12-pip -y
 
           echo "Cloning/Fetching repository using HTTPS with Personal Access Token..."
           if [ -d "$APP_DIR/.git" ]; then
@@ -60,28 +73,31 @@ jobs:
               git reset --hard origin/main # Hard reset to match the remote main branch
           else
               echo "Repository does not exist. Cloning it now..."
-              # Ensure the parent directory for the application exists
               mkdir -p "$(dirname "$APP_DIR")"
-              # Clone the repository using HTTPS with the PAT for authentication
-              # The PAT is directly interpolated into the URL here.
               git clone "https://oauth2:${{ secrets.GH_PAT }}@github.com/Notenlish/hukuksuzlugun-bedeli.git" "$APP_DIR"
           fi
 
           # IMPORTANT: Remove the PAT from the shell history on the VDS for security
-          # This line attempts to remove the last command from the shell history.
           history -d $((HISTCMD-1)) || true
-          
+
           cd "$APP_DIR/backend"
-          echo "Setting up Python virtual environment..."
-          # Create a virtual environment named 'venv'
-          python3 -m venv venv
+
+          # --- Remove existing venv before recreating with new Python version ---
+          if [ -d "venv" ]; then
+              echo "Removing existing virtual environment..."
+              rm -rf venv
+          fi
+
+          echo "Setting up Python virtual environment with Python 3.12..."
+          # Create a virtual environment named 'venv' using python3.12
+          # If you installed python3.12, use 'python3.12 -m venv venv'
+          python3.12 -m venv venv
           # Activate the virtual environment
           source venv/bin/activate
-          
+
           echo "Installing Python dependencies into the virtual environment..."
-          # Install dependencies using the venv's pip
           pip install -r requirements.txt
-          
+
           # Deactivate the virtual environment for the current SSH session
           deactivate
         EOF
@@ -99,14 +115,10 @@ jobs:
           SERVICE_FILE="/etc/systemd/system/myapp.service"
 
           echo "Reloading systemd daemon and restarting service..."
-          # Reload the systemd manager configuration
           systemctl daemon-reexec
           systemctl daemon-reload
-          # Enable the service to start on boot (if not already enabled). '|| true' prevents error if already enabled.
           systemctl enable myapp || true
-          # Restart the application service
           systemctl restart myapp
           echo "Service status:"
-          # Display the status of the service without pagination
           systemctl status myapp --no-pager
         EOF_SERVICE_MGMT
