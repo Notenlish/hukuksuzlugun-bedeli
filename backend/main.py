@@ -5,6 +5,7 @@ from enum import Enum
 from dotenv import load_dotenv
 
 print("Loading .env file. Loading ENVIRONMENT VARIABLES.")
+
 load_dotenv(".env")
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
