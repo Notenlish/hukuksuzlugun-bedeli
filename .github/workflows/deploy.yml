@@ -51,8 +51,22 @@ jobs:
           # --- DEBUGGING: Verify SSH key and known_hosts on VDS ---
           echo "--- Debugging SSH setup on VDS ---"
           ls -la ~/.ssh/
+          
+          # Ensure known_hosts exists before attempting to cat it for debugging
+          touch ~/.ssh/known_hosts
+
           cat ~/.ssh/github_deploy_key # Verify content (sensitive, but for debug)
           cat ~/.ssh/known_hosts # Verify content
+
+          # IMPORTANT: Sanitize the private key file to handle potential line ending issues
+          # This requires 'dos2unix' to be installed on your VDS (sudo apt install dos2unix)
+          if command -v dos2unix &> /dev/null; then
+              echo "Running dos2unix on github_deploy_key..."
+              dos2unix ~/.ssh/github_deploy_key
+          else
+              echo "Warning: dos2unix not found. Consider installing it on your VDS for key sanitization."
+          fi
+
 
           # Add github.com's host key to the VDS's known_hosts
           echo "Adding github.com to VDS's known_hosts (if not already present)..."
