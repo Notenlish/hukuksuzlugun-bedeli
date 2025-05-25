@@ -62,8 +62,9 @@ jobs:
           sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt update
 
-          # Install Python 3.12 and its venv/pip modules
-          sudo apt install git python3.12 python3.12-venv python3.12-pip -y
+          # Install Python 3.12 and its venv module
+          # Removed 'python3.12-pip' as it's not a separate package here
+          sudo apt install git python3.12 python3.12-venv -y
 
           echo "Cloning/Fetching repository using HTTPS with Personal Access Token..."
           if [ -d "$APP_DIR/.git" ]; then
@@ -90,12 +91,12 @@ jobs:
 
           echo "Setting up Python virtual environment with Python 3.12..."
           # Create a virtual environment named 'venv' using python3.12
-          # If you installed python3.12, use 'python3.12 -m venv venv'
           python3.12 -m venv venv
           # Activate the virtual environment
           source venv/bin/activate
 
           echo "Installing Python dependencies into the virtual environment..."
+          # Use the pip from the new venv
           pip install -r requirements.txt
 
           # Deactivate the virtual environment for the current SSH session
