@@ -123,3 +123,18 @@ jobs:
           echo "Service status:"
           systemctl status myapp --no-pager
         EOF_SERVICE_MGMT
+    - name: Run filldata.py script
+      run: |
+        VDS_USER="${{ secrets.VDS_USER }}"
+        VDS_IP="${{ secrets.VDS_IP }}"
+        APP_DIR="/opt/my-python-app"
+
+        ssh "$VDS_USER@$VDS_IP" << 'EOF_FILLDATA'
+          set -ex
+          APP_DIR="/opt/my-python-app"
+          cd "$APP_DIR/backend"
+          source venv/bin/activate
+          echo "Running filldata.py..."
+          python3 filldata.py
+          deactivate
+        EOF_FILLDATA

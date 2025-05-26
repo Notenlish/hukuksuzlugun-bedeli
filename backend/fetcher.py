@@ -79,6 +79,15 @@ EVDS_SERIES: dict[str, EVDSSeriesMeta] = {
         "category": CategoryEnum.ECONOMY,
         "description": "Consumer Credit (Opened in TL) (Needs + Vehicle + Housing) (Flow Data,%) - Level",
     },
+    "GROSS RESERVES(USD)": {
+        "name": "Gross Reserve (Million USD)",
+        "code": "TP.REZVARPD.K1",
+        "unit": "index",
+        "frequency": FrequencyEnum.MONTHLY,
+        "data_type": DataType.NUMERIC,
+        "category": CategoryEnum.ECONOMY,
+        "description": "Official reserve assets (Million USD) - Level",
+    },
     # I got rid of the 10 year bond yield because EVDS doesnt give that data to me.
 }
 
@@ -271,7 +280,7 @@ class Fetcher:
                             f"{colorama.Fore.LIGHTBLACK_EX}Data point for {metric.name} on {parsed_date} already exists with same value. Skipping update.{colorama.Fore.WHITE}"
                         )
 
-            time.sleep(1)
+            time.sleep(0.5)
 
     async def populate_db_with_past_evds_data(self):
         print("created session")

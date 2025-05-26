@@ -1,17 +1,19 @@
 "use client";
-import { TypographyP, TypographyH1 } from "@/components/ui/typography";
+import { TypographyP, TypographyH3 } from "@/components/ui/typography";
 import Link from "next/link";
 import AllChanges from "@/components/changes/AllChanges";
 
 import { differenceItem } from "@/types";
 import { useEffect, useState } from "react";
+import CounterTimer from "@/components/counter/counter-timer";
 
 export default function Home() {
+  const [loaded, setLoaded] = useState(false);
   const [differences, setDifferences] = useState<differenceItem[]>([
     {
       type: "DAILY_USD_TRY",
       format_template:
-        "Dolar <span class='text-green-700 font-bold'>{changePercentage}%</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
+        "Dolar <span class='text-green-700 font-bold'>%{changePercentage}</span> arttı, {startValue}{den} <b>{endValue}{e}</b> vardı.",
       changePercentage: 6.02,
       startValue: 36.61,
       endValue: 38.75,
@@ -40,6 +42,12 @@ export default function Home() {
       startValue: 0,
       endValue: 0,
     },
+    {type:"GROSS RESERVES(USD)",
+      format_template:"Brüt Rezervler <span class='text-red-500 font-bold'>% round(neg(changePercentage),2)</span> azaldı, no_trailing_zeroes(dotted_num(round(startValue,-2))) Milyar Dolar{dan} <b>no_trailing_zeroes(dotted_num(round(endValue,-2))) Milyar Dolar{a}</b> vardı.",
+      changePercentage:0,
+      startValue:0,
+      endValue:0,
+    }
   ]);
 
   useEffect(() => {
@@ -48,6 +56,10 @@ export default function Home() {
       const res = await fetch("/api/get-data");
       if (res.ok) {
         const data = await res.json();
+        if (!data) {
+          console.error(`No valid data: ${data}`)
+          return
+        }
 
         const updatedDifferences = differences.map((e) => {
           if (data[e.type]) {
@@ -61,19 +73,25 @@ export default function Home() {
         });
 
         setDifferences(updatedDifferences);
+        setLoaded(true)
       }
     };
     _();
   }, []);
+  
+  const unixEpochTimeMS = 1742357575 * 1000;
+  const startDate = new Date(unixEpochTimeMS)
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <TypographyH1>İmamoğlu Haksızca Tutuklandıktan Beri:</TypographyH1>
+        {/* UNIX Epoch Time of 19th of March, 07:12, 2025, Turkey Timezone(UTC+03) */}
+        <CounterTimer title="İmamoğlu'nun Haksızca Tutuklanmasından Beri:" description="İmamoğlu'nun tutuklandığı Tarih" startDate={startDate} />
+        <div className="text-center w-full"><TypographyH3>İmamoğlu&apos;nun Haksızca Tutuklanmasının Türkiye&apos;e Maliyeti:</TypographyH3></div>
         {/*
          */}
-        <AllChanges differences={differences} />
-        <div className="w-full text-center"><TypographyP>
+        <AllChanges loaded={loaded} differences={differences} />
+        <div className="w-full text-lg text-center"><TypographyP>
           İmamoğlu&apos;na özgürlük için imza verebilirsiniz:{" "}
           <Link
             className="text-red-600 font-bold hover:underline"
