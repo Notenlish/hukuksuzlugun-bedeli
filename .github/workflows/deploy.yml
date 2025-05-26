@@ -53,18 +53,27 @@ jobs:
           echo "Apt lock clearing attempt complete."
           # --- End of apt lock clearing ---
 
-          echo "Updating system packages and installing prerequisites..."
+          echo "Updating system packages..."
           sudo apt update
 
-          # Install software-properties-common to manage PPAs
-          sudo apt install -y software-properties-common
-          # Add the 'deadsnakes' PPA for newer Python versions
-          sudo add-apt-repository ppa:deadsnakes/ppa -y
-          sudo apt update
+          # Check if Python 3.12 is installed, and install if not
+          if ! command -v python3.12 &> /dev/null; then
+              echo "Python 3.12 not found. Installing now..."
+              sudo apt install -y software-properties-common
+              sudo add-apt-repository ppa:deadsnakes/ppa -y
+              sudo apt update
+              sudo apt install -y python3.12 python3.12-venv
+          else
+              echo "Python 3.12 is already installed."
+          fi
 
-          # Install Python 3.12 and its venv module
-          # Removed 'python3.12-pip' as it's not a separate package here
-          sudo apt install git python3.12 python3.12-venv -y
+          # Ensure git is installed
+          if ! command -v git &> /dev/null; then
+              echo "Git not found. Installing now..."
+              sudo apt install -y git
+          else
+              echo "Git is already installed."
+          fi
 
           echo "Cloning/Fetching repository using HTTPS with Personal Access Token..."
           if [ -d "$APP_DIR/.git" ]; then
@@ -123,6 +132,7 @@ jobs:
           echo "Service status:"
           systemctl status myapp --no-pager
         EOF_SERVICE_MGMT
+
     - name: Run filldata.py script
       run: |
         VDS_USER="${{ secrets.VDS_USER }}"
