@@ -100,7 +100,6 @@ export default function AllChanges({
           const copyOfD = JSON.parse(JSON.stringify(d));
 
           let text = d.format_template;
-          const context = { ...d };
 
           // check for negative multipliers in templating
           const negFormattables = [
