@@ -1,5 +1,16 @@
 # hukuksuzlugun-bedeli
 
+# todo
+- seo, date by date pages for each date idfkg
+- more Data
+- sektör ileri gelenleri açıklamaları
+- better ui
+- önemli adaletsizlikler arşivi(veya veritabanına ekle)
+- kaç kişi işten çıkarıldı ölç
+- grafikler
+- embed
+
+
 for `DATABASE_URL`, it should start with `postgresql://` instead of `postgre://`.
 If you use `postgre://` then it will give this error: `sqlalchemy.exc.NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`
 
