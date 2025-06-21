@@ -1,5 +1,15 @@
 # hukuksuzlugun-bedeli
 
+OFFF
+EVDS2 api'i hala sunucuya cevap vermek istemiyor aq neyi yanlış yaptım.
+Böyle giderse projeyi salacağım.
+
+https://x.com/cnbceofficial/status/1927376135135887761 ekonomi iyi gidiyorrrr
+https://x.com/bdalgin/status/1927435429264920909
+https://x.com/dunyadanborsa/status/1927402934184071461
+https://x.com/cnbceofficial/status/1927256388973015467
+https://x.com/ebu_melun/status/1927279291928113369
+
 # todo
 - seo, date by date pages for each date idfkg
 - more Data
@@ -32,3 +42,16 @@ db is sqlite3 now, I changed it. Its not postgre anymore
 ## Statistics bla bla bla
 use `prometheus`, with `prometheus-fastapi-instrumentator` or `statsd-exporter`
 use `easyscheduler` for scheduled statistics collection
+
+## vps commands idk
+
+`sudo systemctl list-units --type=service` -> lists services
+`sudo journalctl -u myapp.service -f` -> shows logs realtime
+`sudo journalctl -u myapp.service` -> logs
+`sudo journalctl -u myapp.service -b` -> logs of current boot
+`sudo journalctl -u myapp.service --since "YYYY-MM-DD HH:MM:SS" --until "YYYY-MM-DD HH:MM:SS"` -> filter by time
+`sudo ss -tuln | grep 8000` -> this is supposed to give `tcp    LISTEN     0      128    0.0.0.0:8000       0.0.0.0:*`
+`sudo ufw status` -> firewall. Look for a rule regarding port 8000
+`ping 8.8.8.8` -> ping google
+`ping evds2.tcmb.gov.tr` -> ping evds2 servers
+`curl -v https://evds2.tcmb.gov.tr/service/evds/categories/type=json` 

@@ -169,7 +169,7 @@ class Fetcher:
 
     async def do_evds_stuff(
         self, evds_series_data: dict[str, EVDSSeriesMeta], start: date, end: date
-    ):
+     ):
         for key, meta in evds_series_data.items():
             # TP.DK.USD.A -> DP_DK_USD_A
             column_name = meta["code"].replace(".", "_")
@@ -206,7 +206,7 @@ class Fetcher:
                 print(
                     f"Using existing metric: {metric.name} (EVDS Code: {metric.evds_code})"
                 )
-            
+
             print(f"{colorama.Fore.RED}METRIC{colorama.Fore.WHITE} BU: ", metric)
 
             result: DataFrame | None = self.evds.get_data(

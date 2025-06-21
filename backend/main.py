@@ -118,7 +118,7 @@ async def get_change_endpoint(api_key: str = Depends(api_key_required)):
             startdate = fetcher.date_imamoglu_arrested
             enddate = date.today()
         elif freq==FrequencyEnum.WEEKLY:
-            startdate = last_friday_on_or_before(fetcher.date_imamoglu_arrested)  # TODO: change this to date_imamoglu_arrested maybe?
+            startdate = last_friday_on_or_before(fetcher.date_imamoglu_arrested)
             # lazy EVDS api lags behind and doesnt update data on schedule. F*ck you evds.
             enddate = last_friday_on_or_before(date.today() - timedelta(days=7))
         elif freq == FrequencyEnum.MONTHLY:

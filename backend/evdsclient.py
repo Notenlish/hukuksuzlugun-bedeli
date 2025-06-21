@@ -267,6 +267,7 @@ class evdsAPI:
         params["key"] = self.key
         params = self.__param_generator(params)
         request = self.session.get(url + params, headers={"key": self.key})
+        print("URL BU AMK", request.url)
         self.session.close()
         print(request.url) if self.DEBUG == True else None
         if request.status_code == 200:
