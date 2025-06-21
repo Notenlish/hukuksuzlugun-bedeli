@@ -2,9 +2,7 @@
 
 A project dedicated to showcasing the economic impact of the 19 March civil coup to the Turkish Economy.
 
-OFFF
-EVDS2 api'i hala sunucuya cevap vermek istemiyor aq neyi yanlış yaptım.
-Böyle giderse projeyi salacağım.
+If the server bugs out and cannot fetch data or respond, just make a commit, the deploy gh action will start the code again.
 
 https://x.com/cnbceofficial/status/1927376135135887761 ekonomi iyi gidiyorrrr
 https://x.com/bdalgin/status/1927435429264920909
