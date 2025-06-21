@@ -111,7 +111,7 @@ export default function CounterTimer({
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
-      <Card className="bg-gradient-to-br from-red-700 to-red-800">
+      <Card className="bg-gradient-to-br from-red-700 to-red-900">
         <CardContent className="p-8">
           <div className="text-center mb-0">
             <p className="text-slate-100">

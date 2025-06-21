@@ -19,23 +19,23 @@ jobs:
         mkdir -p ~/.ssh
         # Write the VDS SSH private key from GitHub Secrets to id_rsa
         echo "${{ secrets.VDS_SSH_KEY }}" > ~/.ssh/id_rsa
-        # Set strict permissions for the private key
+        
         chmod 600 ~/.ssh/id_rsa
         # Add VDS's host key to runner's known_hosts to prevent SSH warnings/errors
         ssh-keyscan -H ${{ secrets.VDS_IP }} >> ~/.ssh/known_hosts
 
     - name: Deploy application and service file
       run: |
-        # Define variables for the remote server
         VDS_USER="${{ secrets.VDS_USER }}"
         VDS_IP="${{ secrets.VDS_IP }}"
         APP_DIR="/opt/my-python-app"
+        
         # Use HTTPS with GitHub Personal Access Token (PAT) for cloning
         REPO_HTTPS="https://oauth2:${{ secrets.GH_PAT }}@github.com/Notenlish/hukuksuzlugun-bedeli.git"
         SERVICE_FILE_REMOTE="/etc/systemd/system/myapp.service"
         SERVICE_FILE_LOCAL="./backend/myapp.service" # Path to your local service file
 
-        # --- SSH into VDS to perform initial setup/update and clone with PAT ---
+        # SSH into VDS to perform initial setup/update and clone with PAT
         ssh "$VDS_USER@$VDS_IP" << 'EOF'
           # Enable verbose shell output and exit immediately if any command fails
           set -ex
@@ -51,12 +51,11 @@ jobs:
           sudo rm -f /var/cache/apt/archives/lock
           sudo dpkg --configure -a || true
           echo "Apt lock clearing attempt complete."
-          # --- End of apt lock clearing ---
+
 
           echo "Updating system packages..."
           sudo apt update
 
-          # Check if Python 3.12 is installed, and install if not
           if ! command -v python3.12 &> /dev/null; then
               echo "Python 3.12 not found. Installing now..."
               sudo apt install -y software-properties-common
@@ -92,20 +91,17 @@ jobs:
 
           cd "$APP_DIR/backend"
 
-          # --- Remove existing venv before recreating with new Python version ---
+          # Remove existing venv before recreating with new Python version
           if [ -d "venv" ]; then
               echo "Removing existing virtual environment..."
               rm -rf venv
           fi
 
           echo "Setting up Python virtual environment with Python 3.12..."
-          # Create a virtual environment named 'venv' using python3.12
           python3.12 -m venv venv
-          # Activate the virtual environment
           source venv/bin/activate
 
           echo "Installing Python dependencies into the virtual environment..."
-          # Use the pip from the new venv
           pip install -r requirements.txt
 
           # Deactivate the virtual environment for the current SSH session

@@ -28,11 +28,6 @@ class DataSourceEnum(str, Enum):
     ENAG = "enag"
 
 
-#class UserPermission(str, Enum):
-#    USER = "normal"
-#    ADMIN = "admin"
-
-
 class CategoryEnum(str, Enum):  # why is this not used anywhere?
     ECONOMY = "economy"
     CENSORSHIP = "censorship"
@@ -47,8 +42,6 @@ class Account(models.Model):
     name = fields.CharField(max_length=50)
     lastname = fields.CharField(max_length=50)
     password = fields.CharField(max_length=255)
-
-    # role = fields.CharEnumField(UserPermission, default=UserPermission.USER)
 
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)

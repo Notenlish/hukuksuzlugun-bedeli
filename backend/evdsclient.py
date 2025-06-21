@@ -244,9 +244,12 @@ class evdsAPI:
         }
         # print(params)
 
+        print("aaaaaaaaaaAAAAAAAAAAaaaaaaaaaaaa")
         data = self.__make_request(
             "https://evds2.tcmb.gov.tr/service/evds/", params=params
         )
+        print("bbbbbbbbbbBBBBBBBBBBBBBbbbbbbbbb")
+        
         data = json.loads(data)["items"]
         # If raw is true return only json results.
         if raw:
@@ -267,7 +270,7 @@ class evdsAPI:
         params["key"] = self.key
         params = self.__param_generator(params)
         request = self.session.get(url + params, headers={"key": self.key})
-        print("URL BU AMK", request.url)
+        print("URL BU SAKIN OLA UNUTMA!!!!!!!!!!!!", request.url)
         self.session.close()
         print(request.url) if self.DEBUG == True else None
         if request.status_code == 200:

@@ -35,8 +35,9 @@ export default function RootLayout({
           </Link>
         </header>
         {children}
-        <footer className="flex items-center justify-center justify-center py-4">
+        <footer className="flex gap-4 items-center justify-center justify-center py-4">
           <Link className="hover:underline" href="/contact">İletişim</Link>
+          <Link className="hover:underline" href="/about">Hakkımızda</Link>
         </footer>
       </body>
     </html>

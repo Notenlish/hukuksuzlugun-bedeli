@@ -1,5 +1,7 @@
 # hukuksuzlugun-bedeli
 
+A project dedicated to showcasing the economic impact of the 19 March civil coup to the Turkish Economy.
+
 OFFF
 EVDS2 api'i hala sunucuya cevap vermek istemiyor aq neyi yanlış yaptım.
 Böyle giderse projeyi salacağım.

@@ -13,8 +13,10 @@ export default function AboutPage() {
         bilgilendirmek amaçlıdır. Bu site 3. parti sağlayıcılardan elde ettiği
         veriyle bilgi sunmaktadır, yanlış/eksik veri olması durumunda bu site
         sorumluluk kabul etmez. Bu site hiçbir gruba, kişiye, siyasi partiye,
-        kuruma, kavrama zarar verme amacı gütmez. Bu site, bu site kaynaklı
+        kuruma, kavrama zarar verme amacı gütmez. Bu site, bu siteden kaynaklı
         herhangi bir zarardan sorumlu değildir, sorumlu tutulamaz.
+        
+        Kaldırılmasını istediğiniz bir içerik varsa iletişim kısmından bize yazabilirsiniz.
       </TypographyP>
     </div>
   );

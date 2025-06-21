@@ -131,3 +131,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+.putquotes {
+  position: relative;
+  display: block;
+}
+
+.putquotes::before {
+  position: absolute;
+  content: "";
+  background-image: url("/quote.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 3rem;
+  height: 3rem;
+  opacity: 0.4;
+}
+.putquotes::after {
+  position: absolute;
+  content: "";
+  background-image: url("/quote.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 3rem;
+  height: 3rem;
+  opacity:0.4;
+}
+.putquotes::before {
+  transform: scaleX(-1);
+}
+
+.putquotes::before {
+    top:0px;
+    left:0px;
+}
+.putquotes::after {
+    bottom:0px;
+    right:0px;
+}
