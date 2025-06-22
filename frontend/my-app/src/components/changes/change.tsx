@@ -14,12 +14,8 @@ export default function ChangeComponent({ change,id }: { change: Change,id:numbe
       <div className="flex justify-between w-full">
         <TypographyH3>{change.title}</TypographyH3>
         <div className={`flex ${change.textColor}`}>
-          {/*
-          <div className="text-lg">{change.endValue}</div>
-            */}
           <ArrowUp size={32} />
           <div>%{roundToNthDecimal(change.changePercentage as number, 2)}</div>
-          {/*<>%{change.changePercentage}</> */}
         </div>
       </div>
       <ChangeChart id={id} change={change}></ChangeChart>

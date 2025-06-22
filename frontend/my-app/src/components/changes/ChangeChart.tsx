@@ -58,9 +58,8 @@ export function ChangeChart({ change, id }: { change: Change; id: number }) {
             }}
           >
             <CartesianGrid vertical={false} />
-            {/* @ts-expect-error dontcare. */}
             <YAxis
-              domain={[change.startValue, change.endValue].sort(
+              domain={[change.startValue ?? 0, change.endValue ?? 100].sort(
                 (a, b) => a - b,
               )}
             />
