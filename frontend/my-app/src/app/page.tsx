@@ -90,6 +90,7 @@ export default function Home() {
     const _ = async () => {
       const res = await fetch("/api/get-data");
       if (res.ok) {
+        // @ts-expect-error no.
         let data;
         try {
           data = await res.json();
