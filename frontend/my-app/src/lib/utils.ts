@@ -20,3 +20,19 @@ export function e_a_eki(text: string) {
   }
   return "'a";
 }
+
+export function roundToNthDecimal (num: number, n: number) {
+  if (n >= 0) {
+    const factor = Math.pow(10, n);
+    return Math.round((num + Number.EPSILON) * factor) / factor;
+  } else {
+    // round the nearest 10, 100, etc.
+    const factor = Math.pow(10, -n);
+    return Math.round(num / factor) * factor;
+  }
+};
+
+export function fillToNLengthZeroes (n:number, length:number) {
+  const lengthDifference = length - String.toString(n).length;
+  return `${"0"*lengthDifference}${n}`
+}

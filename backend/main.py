@@ -24,6 +24,8 @@ from utils import (
     first_day_of_current_month,
     first_day_of_the_previous_month,
     last_friday_on_or_before,
+    get_dates_between_dates_with_step,
+    serialize_date
 )
 
 fetcher = Fetcher()
@@ -117,7 +119,7 @@ async def get_change_endpoint(api_key: str = Depends(api_key_required)):
         if freq == FrequencyEnum.DAILY:
             startdate = fetcher.date_imamoglu_arrested
             enddate = date.today()
-        elif freq==FrequencyEnum.WEEKLY:
+        elif freq == FrequencyEnum.WEEKLY:
             startdate = last_friday_on_or_before(fetcher.date_imamoglu_arrested)
             # lazy EVDS api lags behind and doesnt update data on schedule. F*ck you evds.
             enddate = last_friday_on_or_before(date.today() - timedelta(days=7))
@@ -131,25 +133,46 @@ async def get_change_endpoint(api_key: str = Depends(api_key_required)):
 
         # (2025, 3, 19) = date imamoglu arrested
         print(metric)
-        print(startdate, enddate)
+        print("startdate", startdate, "enddate", enddate)
 
         start = await MetricDataPoint.filter(metric=metric, date=startdate).first()
         end = await MetricDataPoint.filter(metric=metric, date=enddate).first()
-        
+        if freq == FrequencyEnum.DAILY:
+            total_wanted_points = 48 + 2  # 2 at start and end, the rest is in between
+            dates = get_dates_between_dates_with_step(
+                startdate, enddate, total_wanted_points
+            )
 
-        if start is None or end is None:
-            raise Exception(f"A value is null. start is {start} end is {end}.")
-        
-        print(start.value, end.value)
+            datapoints = [{"value": start.value, "date": serialize_date(start.date)}]
+            for d in dates:
+                datapoint = await MetricDataPoint.filter(metric=metric, date=d).first()
+                datapoints.append({"value": datapoint.value, "date": serialize_date(datapoint.date)})
+            datapoints.append({"value": end.value, "date": serialize_date(end.date)})
+            
+            print("AMINA KODUĞUMUN GÖT LALESİ BANA BAK BU SİKTİĞİMİN DATE'İNİ DÜZGÜN FORMATLA PİÇOĞLU PİÇ")
+            print(serialize_date(end.date))
+
+            if start is None or end is None:
+                raise Exception(f"A value is null. start is {start} end is {end}.")
+
+            print(start.value, end.value)
+        else:
+            datapoints = [
+                {"value": start.value, "date": serialize_date(start.date)},
+                {"value": end.value, "date": serialize_date(end.date)},
+            ]
 
         if metric.data_type == DataTypeEnum.numeric:
             change_value = end.value - start.value
             change_perc = 100 * (change_value / start.value)
+
             output[key] = {
                 "changeValue": change_value,
                 "changePercentage": change_perc,
                 "startValue": start.value,
                 "endValue": end.value,
+                "graph": datapoints,
+                # "title": metric.name, # no need to pass this, title is already defined in the frontend side.
             }
         else:
             raise Exception(

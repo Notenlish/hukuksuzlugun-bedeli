@@ -1,6 +1,6 @@
 export interface differenceItem {
   type: string;
-  format_template: string;
+  formatTemplate: string;
   changeValue?: number;
   changePercentage?: number;
   startValue?: number;
@@ -14,4 +14,22 @@ export interface QuoteData {
   text: string;
   source: string;
   date: Date;
+}
+
+export interface ChangeGraphPoint {
+  value: number;
+  date: Date;
+}
+
+export interface Change {
+  graph: ChangeGraphPoint[];
+  title: string;
+  type: string;
+  changePercentage?: number;
+  changeValue?: number;
+  startValue?: number;
+  endValue?: number;
+  formatTemplate: string;
+  color: string;
+  textColor: string;
 }

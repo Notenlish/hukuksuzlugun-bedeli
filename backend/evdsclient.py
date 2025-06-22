@@ -2,6 +2,8 @@ import json
 import ssl
 from datetime import date
 
+from requests.exceptions import SSLError
+
 import pandas as pd
 import requests
 import urllib3
@@ -269,7 +271,10 @@ class evdsAPI:
     def __make_request(self, url, params={}):
         params["key"] = self.key
         params = self.__param_generator(params)
-        request = self.session.get(url + params, headers={"key": self.key})
+        try: 
+            request = self.session.get(url + params, headers={"key": self.key})
+        except SSLError:
+            raise Exception("SSL error, maybe you did too many connections?")
         print("URL BU SAKIN OLA UNUTMA!!!!!!!!!!!!", request.url)
         self.session.close()
         print(request.url) if self.DEBUG == True else None

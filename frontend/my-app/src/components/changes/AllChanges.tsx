@@ -4,6 +4,8 @@ import parse from "html-react-parser";
 import { differenceItem } from "@/types";
 import { den_dan_eki, e_a_eki } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { roundToNthDecimal } from "@/lib/utils";
+
 
 function evaluateTemplateExpressions(
   template: string,
@@ -75,16 +77,6 @@ function getValue(expr: string, context: Record<string, number>): number {
   throw new Error(`Unknown variable or expression: "${expr}"`);
 }
 
-const roundToNthDecimal = (num: number, n: number) => {
-  if (n >= 0) {
-    const factor = Math.pow(10, n);
-    return Math.round((num + Number.EPSILON) * factor) / factor;
-  } else {
-    // round the nearest 10, 100, etc.
-    const factor = Math.pow(10, -n);
-    return Math.round(num / factor) * factor;
-  }
-};
 
 export default function AllChanges({
   differences,
@@ -99,7 +91,7 @@ export default function AllChanges({
         differences.map((d, i) => {
           const copyOfD = JSON.parse(JSON.stringify(d));
 
-          let text = d.format_template;
+          let text = d.formatTemplate;
 
           // check for negative multipliers in templating
           const negFormattables = [

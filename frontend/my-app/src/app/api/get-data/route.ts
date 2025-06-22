@@ -48,6 +48,7 @@ export async function GET() {
 
     console.log("LETS GOO TIME TO MAKE DATA JSON");
     const data = await apiRes.json();
+    console.log(data)
     return NextResponse.json(data);
   } catch (e) {
     console.error("Error in API route:", e);
