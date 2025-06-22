@@ -1,6 +1,6 @@
 # hukuksuzlugun-bedeli
 
-![ss.png](screenshot)
+![screenshot](/ss.png)
 
 A project dedicated to showcasing the economic impact of the 19 March civil coup to the Turkish Economy.
 
