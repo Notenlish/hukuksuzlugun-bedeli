@@ -32,7 +32,4 @@ export function roundToNthDecimal (num: number, n: number) {
   }
 };
 
-export function fillToNLengthZeroes (n:number, length:number) {
-  const lengthDifference = length - String.toString(n).length;
-  return `${"0"*lengthDifference}${n}`
-}
+
