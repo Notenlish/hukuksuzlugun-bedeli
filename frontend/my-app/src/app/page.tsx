@@ -5,7 +5,7 @@ import {
   TypographyH2,
 } from "@/components/ui/typography";
 import Link from "next/link";
-import AllChanges from "@/components/changes/AllChanges";
+// import AllChanges from "@/components/changes/AllChanges";
 import AllChanges2 from "@/components/changes/AllChanges2";
 
 // import { differenceItem } from "@/types";
@@ -133,7 +133,7 @@ export default function Home() {
           </TypographyH3>
         </div>
         {/* <AllChanges loaded={loaded} differences={changes} /> */}
-        <AllChanges2 changes={changes}></AllChanges2>
+        <AllChanges2 loaded={loaded} changes={changes}></AllChanges2>
         <div className="w-full text-lg text-center">
           <TypographyP>
             İmamoğlu&apos;na özgürlük için imza verebilirsiniz:{" "}

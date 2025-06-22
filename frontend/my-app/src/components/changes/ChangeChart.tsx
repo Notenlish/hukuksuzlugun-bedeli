@@ -1,11 +1,10 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
 import {
-  ResponsiveContainer,
+  // ResponsiveContainer,
   CartesianGrid,
-  Line,
-  LineChart,
+  // Line,
+  // LineChart,
   XAxis,
   YAxis,
   Area, // Import Area for the gradient fill
@@ -13,12 +12,12 @@ import {
 } from "recharts";
 
 import {
-  Card,
+  //Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+  //CardDescription,
+  //CardFooter,
+  //CardHeader,
+  //CardTitle,
 } from "@/components/ui/card";
 
 import {

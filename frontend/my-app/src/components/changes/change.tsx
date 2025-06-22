@@ -1,5 +1,5 @@
 import { Change } from "@/types";
-import { TypographyH3, TypographyP } from "../ui/typography";
+import { TypographyH3 } from "../ui/typography";
 import { ArrowUp } from "lucide-react";
 import { roundToNthDecimal } from "@/lib/utils";
 import { ChangeChart } from "./ChangeChart";
