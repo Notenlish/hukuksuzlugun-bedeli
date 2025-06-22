@@ -108,7 +108,6 @@ async def public_endpoint():
 
 @app.post("/get-change")
 async def get_change_endpoint(api_key: str = Depends(api_key_required)):
-    print("GET CHANGE ASDASDMASKDMLASLKDM")
     output = {}
     for key, value in EVDS_SERIES.items():
         metric = await TrackedMetric.filter(name=value["name"]).first()
@@ -132,8 +131,6 @@ async def get_change_endpoint(api_key: str = Depends(api_key_required)):
             raise Exception(f"I haven't coded anything for this frequency: {freq}")
 
         # (2025, 3, 19) = date imamoglu arrested
-        print(metric)
-        print("startdate", startdate, "enddate", enddate)
 
         start = await MetricDataPoint.filter(metric=metric, date=startdate).first()
         end = await MetricDataPoint.filter(metric=metric, date=enddate).first()
@@ -149,13 +146,8 @@ async def get_change_endpoint(api_key: str = Depends(api_key_required)):
                 datapoints.append({"value": datapoint.value, "date": serialize_date(datapoint.date)})
             datapoints.append({"value": end.value, "date": serialize_date(end.date)})
             
-            print("AMINA KODUĞUMUN GÖT LALESİ BANA BAK BU SİKTİĞİMİN DATE'İNİ DÜZGÜN FORMATLA PİÇOĞLU PİÇ")
-            print(serialize_date(end.date))
-
             if start is None or end is None:
                 raise Exception(f"A value is null. start is {start} end is {end}.")
-
-            print(start.value, end.value)
         else:
             datapoints = [
                 {"value": start.value, "date": serialize_date(start.date)},
@@ -231,7 +223,6 @@ async def viewdb_endpoint(
                     records = await model_class.all()
                     serialized = []
                     for record in records:
-                        # print("!!!!!! will be alsdasdlasn records")
                         record_data = {}
                         # Iterate over the model's fields to build a dictionary
                         for field_name in record._meta.fields_map.keys():

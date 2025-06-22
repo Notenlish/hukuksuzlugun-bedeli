@@ -87,14 +87,13 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    console.log(changes);
     const _ = async () => {
       const res = await fetch("/api/get-data");
       if (res.ok) {
         let data;
         try {
           data = await res.json();
-          console.log("DATA GOT:", data);
+          // console.log("DATA GOT:", data);
         } catch (err) {
           console.error("AAA", err);
         }
