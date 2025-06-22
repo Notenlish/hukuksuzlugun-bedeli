@@ -99,9 +99,12 @@ export default function Home() {
           console.error("AAA", err);
         }
         const updatedChanges = changes.map((e) => {
+          // @ts-expect-error ...
           if (data[e.type]) {
+            // @ts-expect-error ...
             const o = data[e.type];
             for (const [key, value] of Object.entries(o)) {
+              // @ts-expect-error ...
               e[key] = value;
             }
           }
