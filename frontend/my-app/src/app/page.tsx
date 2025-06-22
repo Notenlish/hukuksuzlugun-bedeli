@@ -112,7 +112,7 @@ export default function Home() {
       }
     };
     _();
-  }, []);
+  });    
 
   // Date İmamoğlu Arrested as unix timestamp
   const unixEpochTimeMS = 1742357575 * 1000;
